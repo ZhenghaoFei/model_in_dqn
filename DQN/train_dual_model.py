@@ -120,15 +120,16 @@ class QNetwork(object):
         m2_b1  = tf.Variable(np.random.randn(1, 1, 1, ch_latent_actions)    * 0.01, dtype=tf.float32)
         
         # reward function
-        reward_w = tf.Variable(np.random.randn(1600, ch_latent_actions)*0.01 , dtype=tf.float32)
+        dim = self.s_dim[0]*self.s_dim[1]*ch_h
+        reward_w = tf.Variable(np.random.randn(dim, ch_latent_actions)*0.01 , dtype=tf.float32)
         reward_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="reward_b")
 
         # state value function
-        value_w = tf.Variable(np.random.randn(1600, ch_latent_actions), dtype=tf.float32)
+        value_w = tf.Variable(np.random.randn(dim, ch_latent_actions), dtype=tf.float32)
         value_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="value_b")
 
         # gamma(discount rate)  function
-        gamma_w = tf.Variable(np.random.randn(1600, ch_latent_actions), dtype=tf.float32)
+        gamma_w = tf.Variable(np.random.randn(dim, ch_latent_actions), dtype=tf.float32)
         gamma_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="gamma_b")
 
         for i in range(self.a_dim):
