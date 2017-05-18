@@ -37,7 +37,7 @@ EPS_DECAY_RATE = 0.99999
 MAP_SIZE  = 8
 PROBABILITY = 0.1
 # Directory for storing tensorboard summary results
-SUMMARY_DIR = './results_dqn_plain/'
+SUMMARY_DIR = './results_dual_m/'
 RANDOM_SEED = 1234
 # Size of replay buffer
 BUFFER_SIZE = 1000000
@@ -154,6 +154,8 @@ class QNetwork(object):
 
                 state_n = tf.transpose(state_m2_ns, [0,3,1,2])
                 state_n =  tf.gather_nd(state_n, idx)
+                state_n = tf.expand_dims(state_n, 3)
+
 
                 discount_reward_n = gamma*reward_n
                 discount_reward_n = tf.gather_nd(discount_reward_n, idx)
