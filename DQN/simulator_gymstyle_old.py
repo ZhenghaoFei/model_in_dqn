@@ -27,7 +27,7 @@ class sim_env(object):
 
       # random start
       if FIX_STARTEND:
-          self.start = 0, 0
+          self.start = 4,4  
       else:
           self.start = np.random.random_integers(0, self.dim-1, 2)
           self.start = self.start[0], self.start[1]

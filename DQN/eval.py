@@ -156,16 +156,16 @@ class QNetwork(object):
         state = self.inputs
         state_n = self.state_n
 
-        # state0 = tf.reshape(state_n[:, :, :, 0], [-1, 7, 7, 1])
-        # state1 = tf.reshape(state_n[:, :, :, 1], [-1, 7, 7, 1])
-        # state2 = tf.reshape(state_n[:, :, :, 2], [-1, 7, 7, 1])
-        # state3 = tf.reshape(state_n[:, :, :, 3], [-1, 7, 7, 1])
+        state0 = tf.reshape(state_n[:, :, :, 0], [-1, 10, 10, 1])
+        state1 = tf.reshape(state_n[:, :, :, 1], [-1, 10, 10, 1])
+        state2 = tf.reshape(state_n[:, :, :, 2], [-1, 10, 10, 1])
+        state3 = tf.reshape(state_n[:, :, :, 3], [-1, 10, 10, 1])
 
-        # tf.summary.image('state', state)
-        # tf.summary.image('state0', state0)
-        # tf.summary.image('state1', state1)
-        # tf.summary.image('state2', state2)
-        # tf.summary.image('state3', state3)
+        tf.summary.image('state', state)
+        tf.summary.image('state0', state0)
+        tf.summary.image('state1', state1)
+        tf.summary.image('state2', state2)
+        tf.summary.image('state3', state3)
 
         tf.summary.scalar("Success Rate", success_rate)
         tf.summary.scalar("Qmax Value", episode_ave_max_q)
@@ -284,7 +284,7 @@ def train(sess, env, Qnet, global_step):
 
                 # Update target networks every 1000 iter
                 # if i%TARGET_UPDATE_STEP == 0:
-                    Qnet.update_target_network()
+                    # Qnet.update_target_network()
 
                 if i%EVAL_EPISODES == 0:
                     # summary
