@@ -125,7 +125,7 @@ class QNetwork(object):
         # model 2 latent model
         ch_h = 16
         ch_latent_actions = 8
-        k = 5
+        k = 3
         # with tf.variable_scope("model2", reuse=reuse):
         # state transition functuon
         m2_w0 = tf.Variable(np.random.randn(3, 3, 1, ch_h) * 0.01, dtype=tf.float32)
