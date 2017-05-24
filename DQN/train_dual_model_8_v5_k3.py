@@ -3,7 +3,7 @@
 # 2. add relu nonlinearlity to m2 cnn
 # 3. add relu nonlinearlity to m2 reward function
 # 3. apply skip connection state_n += state_nt  state_n /= 2
-
+# 4. value function evalute next state rather than hidden state
 
 
 import tensorflow as tf
