@@ -1,9 +1,9 @@
 # This version works on 16*16
 
 import tensorflow as tf
+import tensorflow.contrib.layers as layers
 
 import numpy as np
-import tflearn
 # import matplotlib.pyplot as plt
 import time
 
@@ -37,7 +37,7 @@ EPS_DECAY_RATE = 0.99999
 MAP_SIZE  = 8
 PROBABILITY = 0.1
 # Directory for storing tensorboard summary results
-SUMMARY_DIR = './results_dqn_plain/'
+SUMMARY_DIR = './results_dual_m_1024/'
 RANDOM_SEED = 1234
 # Size of replay buffer
 BUFFER_SIZE = 1000000
@@ -89,26 +89,88 @@ class QNetwork(object):
 
 
     def create_Q_network(self):
-        inputs = tflearn.input_data(shape=self.s_dim)
+        state = tf.placeholder(dtype=tf.float32, shape=[None]+self.s_dim, name='state')
+        # store Q(s,a) value
+        # q_a = tf.placeholder(dtype=tf.float32, shape=[None]+self.s_dim)
+        # gamma_init = tf.placeholder(dtype=tf.float32, shape=[None, 1])
 
-        net = tflearn.conv_2d(inputs, 8, 1, activation='relu', name='conv1')
-        net = tflearn.conv_2d(net, 16, 3, activation='relu', name='conv2')
-        # net = tflearn.layers.conv.max_pool_2d (net, 2, strides=None, padding='same', name='MaxPool2D1')
+        q_a = tf.Variable(0, dtype=tf.float32, name="q_a")
 
-        net = tflearn.conv_2d(net, 8, 3, activation='relu', name='conv3')
-        # net = tflearn.conv_2d(inputs, 8, 3, activation='relu', name='conv3')
+        # state feature extraction
+        state_f = layers.convolution2d(state, num_outputs=8, kernel_size=1, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+        state_f = layers.convolution2d(state_f, num_outputs=16, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
+        state_f = layers.convolution2d(state_f, num_outputs=16, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
 
-        # net = tflearn.conv_2d(net, 16, 3, activation='relu', name='conv2')
-        net = tflearn.fully_connected(net, 64, activation='relu')
-        # net = tflearn.layers.normalization.batch_normalization(net)
-        net = tflearn.fully_connected(net, 32, activation='relu')
+        # model 1 from state feature to action number of next state
+        state_m1_h1 = layers.convolution2d(state_f, num_outputs=16, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+        state_m1_n = layers.convolution2d(state_m1_h1, num_outputs=self.a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+        reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=self.a_dim, activation_fn=tf.nn.sigmoid)
+        q_a += reward_m1_n
 
-        net = tflearn.fully_connected(net, 16, activation='relu')
-        # linear layer connected to 1 output representing Q(s,a) 
-        # Weights are init to Uniform[-3e-3, 3e-3]
-        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-        out = tflearn.fully_connected(net, self.a_dim, activation='tanh')
-        return inputs, out
+        # model 2 latent model
+        ch_h = 16
+        ch_latent_actions = 8
+        k = 3
+        # with tf.variable_scope("model2", reuse=reuse):
+        # state transition functuon
+        m2_w0 = tf.Variable(np.random.randn(3, 3, 1, ch_h) * 0.01, dtype=tf.float32)
+        m2_b0  = tf.Variable(np.random.randn(1, 1, 1, ch_h)    * 0.01, dtype=tf.float32)
+
+        m2_w1 = tf.Variable(np.random.randn(3, 3, ch_h, ch_latent_actions) * 0.01, dtype=tf.float32)
+        m2_b1  = tf.Variable(np.random.randn(1, 1, 1, ch_latent_actions)    * 0.01, dtype=tf.float32)
+        
+        # reward function
+        dim = self.s_dim[0]*self.s_dim[1]*ch_h
+        reward_w = tf.Variable(np.random.randn(dim, ch_latent_actions)*0.01 , dtype=tf.float32)
+        reward_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="reward_b")
+
+        # state value function
+        value_w = tf.Variable(np.random.randn(dim, ch_latent_actions), dtype=tf.float32)
+        value_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="value_b")
+
+        # gamma(discount rate)  function
+        gamma_w = tf.Variable(np.random.randn(dim, ch_latent_actions), dtype=tf.float32)
+        gamma_b = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="gamma_b")
+
+        for i in range(self.a_dim):
+            state_n = state_m1_n[:,:,:,i]
+            state_n = tf.reshape(state_n, shape=[-1, 10, 10, 1])
+            gamma = tf.Variable(1, dtype=tf.float32, name="gamma")
+            for j in range(k):
+                state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
+                state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
+                
+                flat_state_m2_h1 = layers.flatten(state_m2_h1)
+                reward_n = tf.nn.sigmoid(tf.matmul(flat_state_m2_h1, reward_w) +reward_b)
+                gamma_n = tf.nn.sigmoid(tf.matmul(flat_state_m2_h1, gamma_w) +gamma_b)
+
+                value_n = tf.matmul(flat_state_m2_h1, value_w) + value_b
+
+                gamma *= gamma_n
+
+                q_n = reward_n + gamma_n*value_n
+                Act = tf.argmax(q_n, axis=1)
+                Act = tf.cast(Act, tf.int32)
+                idx = tf.stack([tf.range(0, tf.shape(Act)[0]), Act], axis=1)
+
+                state_n = tf.transpose(state_m2_ns, [0,3,1,2])
+                state_n =  tf.gather_nd(state_n, idx)
+                state_n = tf.expand_dims(state_n, 3)
+
+
+                discount_reward_n = gamma*reward_n
+                discount_reward_n = tf.gather_nd(discount_reward_n, idx)
+                discount_reward_n = tf.stack([discount_reward_n, discount_reward_n, discount_reward_n, discount_reward_n], axis=1)
+                discount_reward_n = discount_reward_n*tf.one_hot(i, depth=self.a_dim)
+                q_a += discount_reward_n
+
+            discount_value_n = gamma*value_n
+            discount_value_n = tf.gather_nd(discount_value_n, idx)
+            discount_value_n = tf.stack([discount_value_n, discount_value_n, discount_value_n, discount_value_n], axis=1)
+            discount_value_n = discount_value_n*tf.one_hot(i, depth=self.a_dim)
+            q_a += discount_value_n
+
+        return state, q_a
 
     def train(self, inputs, action, observed_q_value):
 
@@ -136,15 +198,14 @@ class QNetwork(object):
 # ===========================
 def build_summaries(): 
     success_rate = tf.Variable(0.)
-    tf.summary.scalar('Success Rate', success_rate)
+    tf.summary.scalar("Success Rate", success_rate)
     episode_ave_max_q = tf.Variable(0.)
-    tf.summary.scalar('Qmax Value', episode_ave_max_q)
+    tf.summary.scalar("Qmax Value", episode_ave_max_q)
 
     summary_vars = [success_rate, episode_ave_max_q]
     summary_ops = tf.summary.merge_all()
 
     return summary_ops, summary_vars
-
 
 def count_parameters():
     total_parameters = 0
@@ -184,6 +245,7 @@ def train(sess, env, Qnet, global_step):
     # Initialize target network weights
     Qnet.update_target_network()
     count_parameters()
+
     # Initialize replay memory
     replay_buffer = ReplayBuffer(BUFFER_SIZE, RANDOM_SEED)
 

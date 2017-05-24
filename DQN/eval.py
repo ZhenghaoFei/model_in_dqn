@@ -1,7 +1,7 @@
 # This version works on 16*16
 
 import tensorflow as tf
-
+import tensorflow.contrib.layers as layers
 import numpy as np
 import tflearn
 # import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ TARGET_UPDATE_STEP = 100
 MINIBATCH_SIZE = 1024
 SAVE_STEP = 10000
 EPS_MIN = 0.05
-EPS_DECAY_RATE = 0.99999
+EPS_DECAY_RATE = 0.99995
 # ===========================
 #   Utility Parameters
 # ===========================
@@ -61,12 +61,12 @@ class QNetwork(object):
         self.tau = tau
 
         # Create the Qnet network
-        self.inputs, self.out = self.create_Q_network()
+        self.inputs, self.out, self.state_n = self.create_Q_network()
 
         self.network_params = tf.trainable_variables()
 
         # Target Network
-        self.target_inputs, self.target_out = self.create_Q_network()
+        self.target_inputs, self.target_out, _ = self.create_Q_network()
         
         self.target_network_params = tf.trainable_variables()[(len(self.network_params)):]
 
@@ -89,26 +89,42 @@ class QNetwork(object):
 
 
     def create_Q_network(self):
-        inputs = tflearn.input_data(shape=self.s_dim)
+        # inputs = tflearn.input_data(shape=self.s_dim)
+        inputs = tf.placeholder(tf.float32, [None]+self.s_dim)
+        hidden = layers.conv2d(inputs, num_outputs=150, kernel_size=3, padding='SAME', activation_fn=tf.nn.relu)
+        state_n = layers.conv2d(hidden, num_outputs=self.a_dim, kernel_size=3, padding='SAME', activation_fn=tf.nn.relu)
+        reward = layers.fully_connected(layers.flatten(hidden), num_outputs=4, activation_fn=tf.nn.sigmoid)
+        
 
-        net = tflearn.conv_2d(inputs, 8, 1, activation='relu', name='conv1')
-        net = tflearn.conv_2d(net, 16, 3, activation='relu', name='conv2')
-        # net = tflearn.layers.conv.max_pool_2d (net, 2, strides=None, padding='same', name='MaxPool2D1')
+        value = layers.conv2d(state_n, num_outputs=self.a_dim, kernel_size=10, padding='VALID', activation_fn=tf.nn.relu)
+        value = tf.reshape(value, [-1, self.a_dim])
+        # print value
+        # fc_w1 = tf.Variable(np.random.randn(49, 32)*0.01, dtype=tf.float32)
+        # fc_b1 = tf.Variable(np.random.randn(1, 32)*0.01, dtype=tf.float32)
+        # fc_w2 = tf.Variable(np.random.randn(32, 1)*0.01, dtype=tf.float32)
+        # fc_b2 = tf.Variable(np.random.randn(1, 1)*0.01, dtype=tf.float32)
 
-        net = tflearn.conv_2d(net, 8, 3, activation='relu', name='conv3')
-        # net = tflearn.conv_2d(inputs, 8, 3, activation='relu', name='conv3')
+        # state0 = layers.flatten(state_n[:,:,:,0])
+        # state1 = layers.flatten(state_n[:,:,:,1])
+        # state2 = layers.flatten(state_n[:,:,:,2])
+        # state3 = layers.flatten(state_n[:,:,:,3])
 
-        # net = tflearn.conv_2d(net, 16, 3, activation='relu', name='conv2')
-        net = tflearn.fully_connected(net, 64, activation='relu')
-        # net = tflearn.layers.normalization.batch_normalization(net)
-        net = tflearn.fully_connected(net, 32, activation='relu')
+        # values0 = tf.nn.relu(tf.matmul(state0,fc_w1)+fc_b1)
+        # values0 = tf.nn.relu(tf.matmul(values0,fc_w2)+fc_b2)
 
-        net = tflearn.fully_connected(net, 16, activation='relu')
-        # linear layer connected to 1 output representing Q(s,a) 
-        # Weights are init to Uniform[-3e-3, 3e-3]
-        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-        out = tflearn.fully_connected(net, self.a_dim, activation='tanh')
-        return inputs, out
+        # values1 = tf.nn.relu(tf.matmul(state0,fc_w1)+fc_b1)
+        # values1 = tf.nn.relu(tf.matmul(values1,fc_w2)+fc_b2)
+
+        # values2 = tf.nn.relu(tf.matmul(state0,fc_w1)+fc_b1)
+        # values2 = tf.nn.relu(tf.matmul(values2,fc_w2)+fc_b2)
+
+        # values3 = tf.nn.relu(tf.matmul(state0,fc_w1)+fc_b1)
+        # values3 = tf.nn.relu(tf.matmul(values3,fc_w2)+fc_b2)
+
+        # out = tf.concat([values0, values1, values2, values3], axis=1)
+
+        out = value + reward
+        return inputs, out, state_n#[state0, state1, state2, state3]
 
     def train(self, inputs, action, observed_q_value):
 
@@ -131,31 +147,33 @@ class QNetwork(object):
     def update_target_network(self):
         self.sess.run(self.update_target_network_params)
 
-# ===========================
-#   Tensorflow Summary Ops
-# ===========================
-def build_summaries(): 
-    success_rate = tf.Variable(0.)
-    tf.summary.scalar('Success Rate', success_rate)
-    episode_ave_max_q = tf.Variable(0.)
-    tf.summary.scalar('Qmax Value', episode_ave_max_q)
+    # ===========================
+    #   Tensorflow Summary Ops
+    # ===========================
+    def build_summaries(self): 
+        success_rate = tf.Variable(0.)
+        episode_ave_max_q = tf.Variable(0.)
+        state = self.inputs
+        state_n = self.state_n
 
-    summary_vars = [success_rate, episode_ave_max_q]
-    summary_ops = tf.summary.merge_all()
+        state0 = tf.reshape(state_n[:, :, :, 0], [-1, 10, 10, 1])
+        state1 = tf.reshape(state_n[:, :, :, 1], [-1, 10, 10, 1])
+        state2 = tf.reshape(state_n[:, :, :, 2], [-1, 10, 10, 1])
+        state3 = tf.reshape(state_n[:, :, :, 3], [-1, 10, 10, 1])
 
-    return summary_ops, summary_vars
+        tf.summary.image('state', state)
+        tf.summary.image('state0', state0)
+        tf.summary.image('state1', state1)
+        tf.summary.image('state2', state2)
+        tf.summary.image('state3', state3)
 
+        tf.summary.scalar("Success Rate", success_rate)
+        tf.summary.scalar("Qmax Value", episode_ave_max_q)
 
-def count_parameters():
-    total_parameters = 0
-    for variable in tf.trainable_variables():
-        # shape is an array of tf.Dimension
-        shape = variable.get_shape()
-        variable_parametes = 1
-        for dim in shape:
-            variable_parametes *= dim.value
-        total_parameters += variable_parametes
-    print("total_parameters:", total_parameters)
+        summary_vars = [success_rate, episode_ave_max_q, state]
+        summary_ops = tf.summary.merge_all()
+
+        return summary_ops, summary_vars
 
 # ===========================
 #   Agent Training
@@ -163,7 +181,7 @@ def count_parameters():
 def train(sess, env, Qnet, global_step):
 
     # Set up summary Ops
-    summary_ops, summary_vars = build_summaries()
+    summary_ops, summary_vars = Qnet.build_summaries()
 
     sess.run(tf.global_variables_initializer())
 
@@ -183,7 +201,7 @@ def train(sess, env, Qnet, global_step):
 
     # Initialize target network weights
     Qnet.update_target_network()
-    count_parameters()
+
     # Initialize replay memory
     replay_buffer = ReplayBuffer(BUFFER_SIZE, RANDOM_SEED)
 
@@ -211,7 +229,8 @@ def train(sess, env, Qnet, global_step):
 
 
         for j in xrange(MAX_EP_STEPS):
-            predicted_q_value = Qnet.predict(np.reshape(s, np.hstack((1, Qnet.s_dim))))
+            state = np.reshape(s, np.hstack((1, Qnet.s_dim)))
+            predicted_q_value = Qnet.predict(state)
             predicted_q_value = predicted_q_value[0]
 
             np.random.seed()
@@ -265,7 +284,7 @@ def train(sess, env, Qnet, global_step):
 
                 # Update target networks every 1000 iter
                 # if i%TARGET_UPDATE_STEP == 0:
-                    Qnet.update_target_network()
+                    # Qnet.update_target_network()
 
                 if i%EVAL_EPISODES == 0:
                     # summary
@@ -273,6 +292,8 @@ def train(sess, env, Qnet, global_step):
                     summary_str = sess.run(summary_ops, feed_dict={
                         summary_vars[0]: (eval_acc_reward+EVAL_EPISODES)/2,
                         summary_vars[1]: ep_ave_max_q / float(j+1),
+                        summary_vars[2]: state
+
                     })
                     writer.add_summary(summary_str, i)
                     writer.flush()
