@@ -199,9 +199,9 @@ class QNetwork(object):
                 # state_nt = tf.transpose(state_m2_ns, [0,3,1,2])
                 # state_nt =  tf.gather_nd(tf.transpose(state_m2_ns, [0,3,1,2]), idx)
                 state_nt = tf.expand_dims(tf.gather_nd(tf.transpose(state_m2_ns, [0,3,1,2]), idx), 3)
-                # state_n += state_nt
-                # state_n /= 2
-                state_n = state_nt
+                state_n += state_nt
+                state_n /= 2
+                # state_n = state_nt
 
                 discount_reward_n = gamma * reward_n
                 discount_reward_n = tf.gather_nd(discount_reward_n, idx)
