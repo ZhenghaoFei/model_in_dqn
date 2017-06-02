@@ -50,7 +50,7 @@ def dual_model(X, S, s_dim, a_dim, config):
     # State from statespace m1 to state space m2 through cnn
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=16, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=150, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=16, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n)
     # model 2 latent model
     ch_h = 16

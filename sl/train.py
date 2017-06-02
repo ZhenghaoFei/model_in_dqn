@@ -6,8 +6,8 @@ from model import *
 from utils import fmt_row
 
 # Data
-tf.app.flags.DEFINE_string('input',           'data/gridworld_8.mat', 'Path to data')
-tf.app.flags.DEFINE_integer('imsize',         8,                      'Size of input image')
+tf.app.flags.DEFINE_string('input',           'data/gridworld_16.mat', 'Path to data')
+tf.app.flags.DEFINE_integer('imsize',         16,                      'Size of input image')
 # Parameters
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
