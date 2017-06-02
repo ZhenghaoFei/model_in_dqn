@@ -51,7 +51,7 @@ import scipy.io as sio
 #     ytrain = ytrain.flatten()
 #     return Xtrain, S1train, S2train, ytrain, Xtest, S1test, S2test, ytest
 
-def process_gridworld_data(input, imsize):
+def process_gridworld_data(input, imsize, statebatchsize):
     # run training from input matlab data file, and save test data prediction in output file
     # load data from Matlab file, including
     # im_data: flattened images
@@ -62,7 +62,8 @@ def process_gridworld_data(input, imsize):
     # S: [step, size, size, 1],  current position, have 10 steps for each X
 
     im_size=[imsize, imsize]
-    steps = imsize + 2
+    print "load data: ", input
+    print "statebatchsize: ", statebatchsize
     matlab_data = sio.loadmat(input)
     im_data = matlab_data["batch_im_data"]
     im_data = (im_data - 1)/255  # obstacles = 1, free zone = 0
@@ -76,11 +77,15 @@ def process_gridworld_data(input, imsize):
     Xval_data = value_data.astype('float32')
     Xval_data = Xval_data.reshape(-1, im_size[0], im_size[1], 1)
     Xdata = np.concatenate((Xim_data, Xval_data), axis=3)
-    Xdata_all = np.zeros([Xval_data.shape[0], steps, Xval_data.shape[1], Xval_data.shape[2], 2])
+    Xdata_all = np.zeros([Xval_data.shape[0], statebatchsize, Xval_data.shape[1], Xval_data.shape[2], 2])
 
     S1data = state1_data.astype('int8')
     S2data = state2_data.astype('int8')
-    Sdata = np.zeros([Xval_data.shape[0], steps, Xval_data.shape[1], Xval_data.shape[2], 1])
+    Sdata = np.zeros([Xval_data.shape[0], statebatchsize, Xval_data.shape[1], Xval_data.shape[2], 1])
+    # print "Sdata.shape: ", Sdata.shape
+    # print "S1data.shape: ", S1data.shape
+    # print "S2data.shape: ", S2data.shape
+
     for i in range(Sdata.shape[0]):
         for j in range(Sdata.shape[1]):
             Sdata[i, j, S1data[i,j], S2data[i,j]] = 20

@@ -2,14 +2,14 @@ import time
 import numpy as np
 import tensorflow as tf
 from data  import process_gridworld_data
-from model import dual_model, VI_Block, VI_Untied_Block
+from model import *
 from utils import fmt_row
 
 # Data
-tf.app.flags.DEFINE_string('input',           'data/gridworld_8.mat', 'Path to data')
-tf.app.flags.DEFINE_integer('imsize',         8,                      'Size of input image')
+tf.app.flags.DEFINE_string('input',           'data/gridworld_16.mat', 'Path to data')
+tf.app.flags.DEFINE_integer('imsize',         16,                      'Size of input image')
 # Parameters
-tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
+tf.app.flags.DEFINE_float('lr',               0.0001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
 tf.app.flags.DEFINE_integer('k',              10,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
@@ -34,8 +34,10 @@ X  = tf.placeholder(tf.float32, name="X",  shape=[None, config.imsize, config.im
 S = tf.placeholder(tf.int32,   name="S1", shape=[None, config.imsize, config.imsize, 1])
 y  = tf.placeholder(tf.int32,   name="y",  shape=[None])
 
-
-logits, nn = dual_model(X, S, config)
+s_dim = [config.imsize, config.imsize]
+a_dim = 8
+logits, nn = dual_model(X, S, s_dim, a_dim, config)
+count_parameters()
 
 # Define loss and optimizer
 y_ = tf.cast(y, tf.int64)
@@ -56,7 +58,7 @@ init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 # Xtrain, S1train, S2train, ytrain, Xtest, S1test, S2test, ytest = process_gridworld_data(input=config.input, imsize=config.imsize)
-Xtrain, Strain, ytrain, Xtest, Stest,  ytest =  process_gridworld_data(input=config.input, imsize=config.imsize)
+Xtrain, Strain, ytrain, Xtest, Stest,  ytest =  process_gridworld_data(input=config.input, imsize=config.imsize, statebatchsize=config.statebatchsize)
 
 print "Xtrain shape: ", Xtrain.shape
 print "Strain.shape: ", Strain.shape
@@ -105,12 +107,12 @@ with tf.Session(config=config_T) as sess:
             summary.value.add(tag='Average cost', simple_value=float(avg_cost/num_batches))
             summary_writer.add_summary(summary, epoch)
 
-        if avg_err/num_batches< 0.1:
-          correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
-          # Calculate accuracy
-          accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
-          acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
-          print("Accuracy: {}%".format(100 * (1 - acc)))
+        # if avg_err/num_batches< 0.1:
+        correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
+        # Calculate accuracy
+        accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
+        acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
+        print("Accuracy: {}%".format(100 * (1 - acc)))
 
     print("Finished training!")
 
