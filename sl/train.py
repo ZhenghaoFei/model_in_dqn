@@ -104,6 +104,14 @@ with tf.Session(config=config_T) as sess:
             summary.value.add(tag='Average error', simple_value=float(avg_err/num_batches))
             summary.value.add(tag='Average cost', simple_value=float(avg_cost/num_batches))
             summary_writer.add_summary(summary, epoch)
+
+        if avg_err/num_batches< 0.1:
+          correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
+          # Calculate accuracy
+          accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
+          acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
+          print("Accuracy: {}%".format(100 * (1 - acc)))
+
     print("Finished training!")
 
     # Test model
