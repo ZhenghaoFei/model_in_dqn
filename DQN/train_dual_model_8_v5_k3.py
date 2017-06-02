@@ -110,7 +110,7 @@ class QNetwork(object):
 
         # model 1 from state feature to action number of next state
         state_m1_h1 = layers.convolution2d(state_f, num_outputs=16, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-        state_m1_h1 = layers.convolution2d(state_m1_h1, num_outputs=16, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+        state_m1_h1 = layers.convolution2d(state_m1_h1, num_outputs=16, kernel  _size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
         state_f = layers.batch_norm(state_f)
         # state_f = tf.nn.relu(state_f)
 
