@@ -47,6 +47,11 @@ def dual_model(X, S, s_dim, a_dim, config):
 
     q_a += reward_m1_n
 
+    # State from statespace m1 to state space m2 through cnn
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=16, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=150, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n)
     # model 2 latent model
     ch_h = 16
     ch_latent_actions = 8
@@ -60,14 +65,16 @@ def dual_model(X, S, s_dim, a_dim, config):
     m2_b1  = tf.Variable(np.random.randn(1, 1, 1, ch_latent_actions)    * 0.01, dtype=tf.float32)
     
     # reward function
-    dim = s_dim[0]*s_dim[1]*ch_h
+    # dim = s_dim[0]*s_dim[1]*ch_h
+    dim = state_m1_n.shape[1]* state_m1_n.shape[2]*ch_h
+    dim2 =  state_m1_n.shape[1]* state_m1_n.shape[2]*ch_latent_actions
     reward_w0 = tf.Variable(np.random.randn(dim, ch_h)*0.01 , dtype=tf.float32)
     reward_b0 = tf.Variable(tf.zeros([ch_h]), dtype=tf.float32, name="reward_b")
     reward_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions)*0.01, dtype=tf.float32)
     reward_b1 = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="reward_b")
 
     # state value function
-    value_w0 = tf.Variable(np.random.randn(s_dim[0]*s_dim[1]*ch_latent_actions, ch_h) * 0.01 , dtype=tf.float32)
+    value_w0 = tf.Variable(np.random.randn(dim2, ch_h) * 0.01 , dtype=tf.float32)
     value_b0 = tf.Variable(tf.zeros([ch_h]) * 0.01 , dtype=tf.float32, name="value_b")
     value_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions) * 0.01 , dtype=tf.float32)
     value_b1 = tf.Variable(tf.zeros([ch_latent_actions]) * 0.01 , dtype=tf.float32, name="value_b")
@@ -83,6 +90,7 @@ def dual_model(X, S, s_dim, a_dim, config):
     lambda_b0 = tf.Variable(tf.zeros([ch_h]) * 0.01 , dtype=tf.float32, name="lambda_b")
     lambda_w1 = tf.Variable(np.random.randn(ch_h, 1) * 0.01 , dtype=tf.float32)
     lambda_b1 = tf.Variable(tf.zeros([1]) * 0.01 , dtype=tf.float32, name="lamda_b")
+
     for i in range(a_dim):
         # state_n = state_m1_n[:,:,:,i]
         state_n = tf.expand_dims(state_m1_n[:,:,:,i], 3)

@@ -6,10 +6,10 @@ from model import *
 from utils import fmt_row
 
 # Data
-tf.app.flags.DEFINE_string('input',           'data/gridworld_16.mat', 'Path to data')
-tf.app.flags.DEFINE_integer('imsize',         16,                      'Size of input image')
+tf.app.flags.DEFINE_string('input',           'data/gridworld_8.mat', 'Path to data')
+tf.app.flags.DEFINE_integer('imsize',         8,                      'Size of input image')
 # Parameters
-tf.app.flags.DEFINE_float('lr',               0.0001,                  'Learning rate for RMSProp')
+tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
 tf.app.flags.DEFINE_integer('k',              10,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
@@ -47,7 +47,8 @@ cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy_mean')
 tf.add_to_collection('losses', cross_entropy_mean)
 
 cost = tf.add_n(tf.get_collection('losses'), name='total_loss')
-optimizer = tf.train.RMSPropOptimizer(learning_rate=config.lr, epsilon=1e-6, centered=True).minimize(cost)
+lr = tf.placeholder(dtype=tf.float32)
+optimizer = tf.train.RMSPropOptimizer(learning_rate=lr, epsilon=1e-6, centered=True).minimize(cost)
 
 # Test model & calculate accuracy
 cp = tf.cast(tf.argmax(nn, 1), tf.int32)
@@ -82,7 +83,11 @@ with tf.Session(config=config_T) as sess:
 
     batch_size = config.batchsize
     print(fmt_row(10, ["Epoch", "Train Cost", "Train Err", "Epoch Time"]))
+    learning_rate = config.lr
     for epoch in range(int(config.epochs)):
+        if epoch % 10 == 0 and epoch!=0:
+            learning_rate /= 10
+            print "learning_rate decay to: ", learning_rate
         tstart = time.time()
         avg_err, avg_cost = 0.0, 0.0
         num_batches = int(Xtrain.shape[0]/batch_size)
@@ -91,8 +96,7 @@ with tf.Session(config=config_T) as sess:
             j = i + batch_size
             if j <= Xtrain.shape[0]:
                 # Run optimization op (backprop) and cost op (to get loss value)
-                fd = {X: Xtrain[i:j], S: Strain[i:j],
-                      y: ytrain[i:j].flatten()}
+                fd = {X: Xtrain[i:j], S: Strain[i:j], y: ytrain[i:j].flatten(), lr:learning_rate}
                 _, e_, c_ = sess.run([optimizer, err, cost], feed_dict=fd)
                 avg_err += e_
                 avg_cost += c_
