@@ -42,20 +42,22 @@ def dual_model(X, S, s_dim, a_dim, config):
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n)
 
-    reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=16, activation_fn=tf.nn.relu)
+    reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=64, activation_fn=tf.nn.relu)
     reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=tf.nn.relu)
 
     q_a += reward_m1_n
 
     # State from statespace m1 to state space m2 through cnn
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=16, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=16, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n)
-    # model 2 latent model
     ch_h = 16
     ch_latent_actions = 8
-    k = 15
+    k = 25
+
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=150, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_latent_actions, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n)
+
+    # model 2 latent model
     # with tf.variable_scope("model2", reuse=reuse):
     # state transition functuon
     m2_w0 = tf.Variable(np.random.randn(3, 3, 1, ch_h) * 0.01, dtype=tf.float32)
