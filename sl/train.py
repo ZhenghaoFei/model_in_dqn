@@ -6,9 +6,14 @@ from model import *
 from utils import fmt_row
 
 # Data
-tf.app.flags.DEFINE_string('input',           'data/gridworld_16.mat', 'Path to data')
-tf.app.flags.DEFINE_integer('imsize',         16,                      'Size of input image')
+imsize = 16
+tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
+tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
+
 # Parameters
+tf.app.flags.DEFINE_boolean('skip_connection', False,                  'skip connection in dual model')
+tf.app.flags.DEFINE_boolean('weight_decay', False,                  'weight_decay')
+
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
 tf.app.flags.DEFINE_integer('k',              10,                     'Number of value iterations')
@@ -36,7 +41,7 @@ y  = tf.placeholder(tf.int32,   name="y",  shape=[None])
 
 s_dim = [config.imsize, config.imsize]
 a_dim = 8
-logits, nn = dual_model(X, S, s_dim, a_dim, config)
+logits, nn = dual_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
 count_parameters()
 
 # Define loss and optimizer
@@ -85,9 +90,10 @@ with tf.Session(config=config_T) as sess:
     print(fmt_row(10, ["Epoch", "Train Cost", "Train Err", "Epoch Time"]))
     learning_rate = config.lr
     for epoch in range(int(config.epochs)):
-        if epoch % 10 == 0 and epoch!=0:
-            learning_rate /= 10
-            print "learning_rate decay to: ", learning_rate
+        if config.weight_decay:
+            if epoch % 10 == 0 and epoch!=0:
+                learning_rate /= 10
+                print "learning_rate decay to: ", learning_rate
         tstart = time.time()
         avg_err, avg_cost = 0.0, 0.0
         num_batches = int(Xtrain.shape[0]/batch_size)
