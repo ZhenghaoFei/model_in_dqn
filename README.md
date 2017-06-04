@@ -1,7 +1,8 @@
 # model_in_dqn
 Find the explicit model in deep q network
 
-##Exp. 1 Supervised Maze (identical as VIN)
+## Exp. 1 Supervised Maze (identical as VIN)
+
 Current Results:
-8x8:
-16x16:
+* 8x8:
+* 16x16:
