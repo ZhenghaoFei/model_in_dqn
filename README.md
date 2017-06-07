@@ -5,4 +5,4 @@ Find the explicit model in deep q network
 
 Current Results:
 * 8x8:
-* 16x16:
+* 16x16: 92.55% (commit: d25f2a）
