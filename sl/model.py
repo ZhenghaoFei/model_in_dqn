@@ -19,7 +19,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     S = tf.cast(S, dtype=tf.float32)
     state = tf.concat([X, S], axis=3)
-    ch_h = 8
+    ch_h = 32
 
     # store Q(s,a) value
     q_a = tf.Variable(0, dtype=tf.float32, name="q_a", trainable=False)
@@ -42,8 +42,8 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n)
 
-    reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=tf.nn.relu)
-    reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=tf.nn.relu)
+    reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
+    reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=None)
 
     q_a += reward_m1_n
 
@@ -120,8 +120,8 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
             flat_state_m2_ns = layers.flatten(state_m2_ns)
 
             # reward
-            reward_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, reward_w0) +reward_b0)
-            reward_n = tf.nn.relu(tf.matmul(reward_n, reward_w1) +reward_b1)
+            reward_n = tf.matmul(flat_state_m2_h1, reward_w0) +reward_b0
+            reward_n = tf.matmul(reward_n, reward_w1) +reward_b1
 
             # gamma
             gamma_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, gamma_w0) +gamma_b0)

@@ -12,7 +12,7 @@ tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.ma
 
 # Parameters
 tf.app.flags.DEFINE_boolean('skip_connection', False,                  'skip connection in dual model')
-tf.app.flags.DEFINE_boolean('weight_decay', False,                  'weight_decay')
+tf.app.flags.DEFINE_boolean('weight_decay',True ,                  'weight_decay')
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
@@ -58,7 +58,9 @@ optimizer = tf.train.RMSPropOptimizer(learning_rate=lr, epsilon=1e-6, centered=T
 # Test model & calculate accuracy
 cp = tf.cast(tf.argmax(nn, 1), tf.int32)
 err = tf.reduce_mean(tf.cast(tf.not_equal(cp, y), dtype=tf.float32))
-
+# Calculate accuracy
+correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
+accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
 # Initializing the variables
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -118,17 +120,25 @@ with tf.Session(config=config_T) as sess:
             summary_writer.add_summary(summary, epoch)
 
         # if avg_err/num_batches< 0.1:
-        correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
-        # Calculate accuracy
-        accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
-        acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
-        print("Accuracy: {}%".format(100 * (1 - acc)))
+        eval_batch_size=10
+        avg_acc = 0.0
+        num_eval_batches = int(Xtest.shape[0]/eval_batch_size)
+        # Loop over all batches
+        for i in range(0, Xtest.shape[0], eval_batch_size):
+            j = i + eval_batch_size
+            if j <= Xtest.shape[0]:
+                # Run optimization op (backprop) and cost op (to get loss value)
+                fd = {X: Xtest[i:j], S: Stest[i:j], y: ytest[i:j].flatten(), lr:learning_rate}
+                acc = accuracy.eval(fd)
+                avg_acc += acc
+        avg_acc/=num_eval_batches
+        print("Accuracy: {}%".format(100 * (1 - avg_acc)))
 
     print("Finished training!")
 
     # Test model
-    correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
+    #correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
     # Calculate accuracy
-    accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
-    acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
-    print('Accuracy: %', 100 * (1 - acc))
+    #accuracy = tf.reduce_mean(tf.cast(tf.not_equal(correct_prediction, y), dtype=tf.float32))
+    #acc = accuracy.eval({X: Xtest, S:Stest, y: ytest.flatten()})
+    #print('Accuracy: %', 100 * (1 - acc))
