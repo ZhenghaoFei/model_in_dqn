@@ -29,13 +29,14 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_f1_w = tf.Variable(np.random.randn(3, 3, ch_i, ch_h) * 0.01, dtype=tf.float32)
     state_f1_b = tf.Variable(np.random.randn(1, 1, 1, ch_h) * 0.01, dtype=tf.float32)
     state_f1 = tf.nn.relu(tf.nn.conv2d(state, state_f1_w, strides=(1, 1, 1, 1), padding='SAME') + state_f1_b)
-    state_f1 = layers.batch_norm(state_f1)
+    # state_f1 = tf.nn.batch_normalization(state_f1)
+    state_f1 = layers.batch_norm(state_f1,decay=0.9)
     # state_f = layers.convolution2d(state, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     
     state_f2_w = tf.Variable(np.random.randn(3, 3, ch_h, ch_h) * 0.01, dtype=tf.float32)
     state_f2_b = tf.Variable(np.random.randn(1, 1, 1, ch_h) * 0.01, dtype=tf.float32)
     state_f2 = tf.nn.relu(tf.nn.conv2d(state_f1, state_f2_w, strides=(1, 1, 1, 1), padding='SAME') + state_f2_b)
-    state_f2 = layers.batch_norm(state_f2)
+    state_f2 = layers.batch_norm(state_f2,decay=0.9)
     # state_f = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
     # state_f = layers.batch_norm(state_f)
 
@@ -43,13 +44,13 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_m1_h1_w = tf.Variable(np.random.randn(3, 3, ch_h, ch_h) * 0.01, dtype=tf.float32)
     state_m1_h1_b = tf.Variable(np.random.randn(1, 1, 1, ch_h) * 0.01, dtype=tf.float32)
     state_m1_h1 = tf.nn.relu(tf.nn.conv2d(state_f2, state_m1_h1_w, strides=(1, 1, 1, 1), padding='SAME') + state_m1_h1_b)
-    state_m1_h1 = layers.batch_norm(state_m1_h1)
+    state_m1_h1 = layers.batch_norm(state_m1_h1,decay=0.9)
     # state_m1_h1 = layers.convolution2d(state_f2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     # state_m1_h1 = layers.batch_norm(state_m1_h1)
     state_m1_h2_w = tf.Variable(np.random.randn(3, 3, ch_h, ch_h) * 0.01, dtype=tf.float32)
     state_m1_h2_b = tf.Variable(np.random.randn(1, 1, 1, ch_h) * 0.01, dtype=tf.float32)
     state_m1_h2 = tf.nn.relu(tf.nn.conv2d(state_m1_h1, state_m1_h2_w, strides=(1, 1, 1, 1), padding='SAME') + state_m1_h2_b)
-    state_m1_h2 = layers.batch_norm(state_m1_h2)
+    state_m1_h2 = layers.batch_norm(state_m1_h2,decay=0.9)
     # state_m1_h1 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     # state_m1_h1 = layers.batch_norm(state_m1_h1)
     # output states of action dimension
@@ -60,7 +61,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_m1_h3 = tf.nn.relu(tf.nn.conv2d(state_m1_h2, state_m1_h3_w, strides=(1, 1, 1, 1), padding='SAME') + state_m1_h3_b)
     state_m1_h3 = layers.batch_norm(state_m1_h3)
     state_m1_n = tf.nn.relu(tf.nn.conv2d(state_m1_h3, state_m1_n_w, strides=(1, 1, 1, 1), padding='SAME') + state_m1_n_b)
-    state_m1_n = layers.batch_norm(state_m1_n)
+    state_m1_n = layers.batch_norm(state_m1_n,decay=0.9)
     # state_m1_n = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     # state_m1_n = layers.batch_norm(state_m1_n)
@@ -84,7 +85,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_tf2_w = tf.Variable(np.random.randn(3, 3, ch_h, a_dim) * 0.01, dtype=tf.float32)
     state_tf2_b = tf.Variable(np.random.randn(1, 1, 1, a_dim) * 0.01, dtype=tf.float32)
     state_tf1 = tf.nn.relu(tf.nn.conv2d(state_m1_n, state_tf1_w, strides=(1, 1, 1, 1), padding='SAME') + state_tf1_b)
-    state_tf1 = layers.batch_norm(state_tf1)
+    state_tf1 = layers.batch_norm(state_tf1,decay=0.9)
     state_m2_initial = tf.nn.relu(tf.nn.conv2d(state_tf1, state_tf2_w, strides=(1, 1, 1, 1), padding='SAME') + state_tf2_b)
     state_m2_initial = layers.batch_norm(state_m2_initial)
     # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
@@ -150,10 +151,10 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
         for j in range(k):
             # state
             state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
-            state_m2_h1 = layers.batch_norm(state_m2_h1)
+            state_m2_h1 = layers.batch_norm(state_m2_h1,decay=0.9)
 
             state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
-            state_m2_ns = layers.batch_norm(state_m2_ns)
+            state_m2_ns = layers.batch_norm(state_m2_ns,decay=0.9)
 
             flat_state_m2_h1 = layers.flatten(state_m2_h1)
             flat_state_m2_ns = layers.flatten(state_m2_ns)
