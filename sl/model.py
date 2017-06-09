@@ -140,8 +140,8 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     # lambda(discount rate)  function
     lambda_w0 = tf.Variable(np.random.randn(dim, ch_h) * 0.01 , dtype=tf.float32)
     lambda_b0 = tf.Variable(tf.zeros([ch_h]), dtype=tf.float32, name="lambda_b")
-    lambda_w1 = tf.Variable(np.random.randn(ch_h, 1) * 0.01 , dtype=tf.float32)
-    lambda_b1 = tf.Variable(tf.zeros([1]), dtype=tf.float32, name="lamda_b")
+    lambda_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions) * 0.01 , dtype=tf.float32)
+    lambda_b1 = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="lamda_b")
 
 
 
@@ -191,8 +191,9 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
             # select action = argmaxQ(s,a)
             q_n = reward_n + gamma_n*value_n
             Act = tf.cast(tf.argmax(q_n, axis=1), tf.int32)
+            # print Act
             idx = tf.stack([tf.range(0, tf.shape(Act)[0]), Act], axis=1)
-
+            # print idx
             # select next state
             state_nt = tf.expand_dims(tf.gather_nd(tf.transpose(state_m2_ns, [0,3,1,2]), idx), 3)
 
@@ -200,13 +201,12 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
                 state_n = tf.nn.relu(state_n+state_nt)
             else:
                 state_n = state_nt
-
             # mask next state rewards gammas values
-            mask = tf.one_hot(j, depth=k)
-            gammas += mask * tf.gather_nd(gamma_n, idx)
-            rewards += mask * tf.gather_nd(reward_n, idx)
-            values += mask * tf.gather_nd(value_n, idx)
-            lambdas += mask * tf.gather_nd(lambda_n, idx)
+            mask = tf.reshape(tf.one_hot(j, depth=k),[1,-1])
+            gammas += mask * tf.reshape(tf.gather_nd(gamma_n, idx),[-1,1])
+            rewards += mask * tf.reshape(tf.gather_nd(reward_n, idx),[-1,1])
+            values += mask * tf.reshape(tf.gather_nd(value_n, idx),[-1,1])
+            lambdas += mask * tf.reshape(tf.gather_nd(lambda_n, idx),[-1,1])
 
         # g lambda
         zeros = 0 * tf.range(0, tf.shape(state)[0])
@@ -218,7 +218,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
             g_lambda = (1 - lambdas[:, j]) * values[:, j] + lambdas[:, j] * (rewards[:, j] + gammas[:, j]*g_lambda)
 
         # q_a
-        mask = tf.one_hot(i, depth=a_dim)
+        mask = tf.reshape(tf.one_hot(i, depth=a_dim),[1,-1])
         g_lambda = tf.expand_dims(g_lambda, 1)
         g_lambda = tf.tile(g_lambda, [1, a_dim])
         q_a += mask * g_lambda

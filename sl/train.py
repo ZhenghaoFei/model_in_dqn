@@ -12,13 +12,13 @@ tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.ma
 
 # Parameters
 tf.app.flags.DEFINE_boolean('skip_connection',False,                  'skip connection in dual model')
-tf.app.flags.DEFINE_boolean('baseline',       True,                  'use baseline cnn model')
+tf.app.flags.DEFINE_boolean('baseline',       False,                  'use baseline cnn model')
 
 tf.app.flags.DEFINE_boolean('weight_decay',   True ,                  'weight_decay')
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
-tf.app.flags.DEFINE_integer('k',              10,                     'Number of value iterations')
+tf.app.flags.DEFINE_integer('k',              5,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
 tf.app.flags.DEFINE_integer('ch_h',           150,                    'Channels in initial hidden layer')
 tf.app.flags.DEFINE_integer('ch_q',           10,                     'Channels in q layer (~actions)')
