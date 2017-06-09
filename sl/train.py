@@ -6,13 +6,15 @@ from model import *
 from utils import fmt_row
 
 # Data
-imsize = 16
+imsize = 8
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 
 # Parameters
-tf.app.flags.DEFINE_boolean('skip_connection', False,                  'skip connection in dual model')
-tf.app.flags.DEFINE_boolean('weight_decay',True ,                  'weight_decay')
+tf.app.flags.DEFINE_boolean('skip_connection',False,                  'skip connection in dual model')
+tf.app.flags.DEFINE_boolean('baseline',       True,                  'use baseline cnn model')
+
+tf.app.flags.DEFINE_boolean('weight_decay',   True ,                  'weight_decay')
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
@@ -41,7 +43,12 @@ y  = tf.placeholder(tf.int32,   name="y",  shape=[None])
 
 s_dim = [config.imsize, config.imsize]
 a_dim = 8
-logits, nn = dual_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+
+if config.baseline:
+    logits, nn = baseline_model(X, S, s_dim, a_dim)
+else:
+    logits, nn = dual_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+
 count_parameters()
 
 # Define loss and optimizer
