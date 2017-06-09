@@ -15,6 +15,59 @@ def count_parameters():
         total_parameters += variable_parametes
     print("total_parameters:", total_parameters)
 
+def baseline_model(X, S, s_dim, a_dim):
+    S = tf.cast(S, dtype=tf.float32)
+    state = tf.concat([X, S], axis=3)
+    ch_h = 32
+
+    # store Q(s,a) value
+    q_a = tf.Variable(0, dtype=tf.float32, name="q_a", trainable=False)
+
+    # state feature extraction
+    state_f = layers.convolution2d(state, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_f = layers.batch_norm(state_f)
+
+    state_f = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
+    state_f = layers.batch_norm(state_f)
+
+    # model 1 from state feature to action number of next state
+    net = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+
+    # model 1 to model 2 state transition
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+    net = layers.convolution2d(net, num_outputs=a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+
+    # model 2 state transition
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+    net = layers.convolution2d(net, num_outputs=ch_h, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
+    net = layers.batch_norm(net)
+
+    # MLP
+    net = layers.flatten(net)
+    net = layers.fully_connected(net, num_outputs=196, activation_fn=None)
+    net = layers.fully_connected(net, num_outputs=128, activation_fn=None)
+
+    # map to q 
+    net = layers.fully_connected(net, num_outputs=a_dim, activation_fn=None)
+
+    # pi mapping from q to action
+    pi = layers.fully_connected(net, num_outputs=32, activation_fn=None)
+    pi_logits = layers.fully_connected(pi, num_outputs=a_dim, activation_fn=None)
+    pi_action = tf.nn.softmax(pi_logits, name="pi_action")
+
+    return pi_logits, pi_action
+
 def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     S = tf.cast(S, dtype=tf.float32)
@@ -35,10 +88,10 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     state_m1_h1 = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_h1 = layers.batch_norm(state_m1_h1)
 
-    state_m1_h1 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_h1 = layers.batch_norm(state_m1_h1)
+    state_m1_h2 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_h2 = layers.batch_norm(state_m1_h2)
 
-    state_m1_n = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n)
 
@@ -173,7 +226,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     # pi mapping from q to action
     pi = layers.fully_connected(q_a, num_outputs=16, activation_fn=None)
-    pi_logits = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=None)
+    pi_logits = layers.fully_connected(pi, num_outputs=a_dim, activation_fn=None)
     pi_action = tf.nn.softmax(pi_logits, name="pi_action")
 
     return pi_logits, pi_action
