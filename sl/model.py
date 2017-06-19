@@ -68,7 +68,7 @@ def baseline_model(X, S, s_dim, a_dim):
 
     return pi_logits, pi_action
 
-def dual_model_old(X, S, s_dim, a_dim, k, skip=False):
+def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     S = tf.cast(S, dtype=tf.float32)
     state = tf.concat([X, S], axis=3)

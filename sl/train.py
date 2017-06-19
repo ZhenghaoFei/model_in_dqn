@@ -6,7 +6,7 @@ from model import *
 from utils import fmt_row
 
 # Data
-imsize = 8
+imsize = 28
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 
@@ -96,6 +96,8 @@ with tf.Session(config=config_T) as sess:
     sess.run(init)
 
     batch_size = config.batchsize
+    print "imsize = ", imsize
+    print "k = ", config.k
     print(fmt_row(10, ["Epoch", "Train Cost", "Train Err", "Epoch Time"]))
     learning_rate = config.lr
     for epoch in range(int(config.epochs)):
