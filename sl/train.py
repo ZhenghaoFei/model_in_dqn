@@ -6,12 +6,12 @@ from model import *
 from utils import fmt_row
 
 # Data
-imsize = 8
+imsize = 16
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 
 # Parameters
-tf.app.flags.DEFINE_boolean('skip_connection',False,                  'skip connection in dual model')
+tf.app.flags.DEFINE_boolean('skip_connection',True,                  'skip connection in dual model')
 tf.app.flags.DEFINE_boolean('baseline',       False,                  'use baseline cnn model')
 
 tf.app.flags.DEFINE_boolean('weight_decay',   True ,                  'weight_decay')
