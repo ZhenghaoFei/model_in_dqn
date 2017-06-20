@@ -145,9 +145,10 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     lambda_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions) * 0.01 , dtype=tf.float32)
     lambda_b1 = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="lamda_b")
 
-    # from (batch_size, dim1, dim2, a_dim) to (a_dim * dim1 * dim2 * 1)
-    state_n = tf.reshape(state_m1_n, shape=[-1, int(state_m1_n.shape[1]), int(state_m1_n.shape[2]) , 1])
-    print state_n
+    # from (batch_size, dim1, dim2, a_dim) to (a_dim * batch_size,  dim1 , dim2 , 1)
+    state_n = tf.transpose(state_m1_n, [0,3,1,2])
+    state_n = tf.reshape(state_n, shape=[-1, int(state_n.shape[2]), int(state_n.shape[3]) , 1])
+    # print state_n
 
     # gamma, rewards, value
     zeros = 0 * tf.range(0, tf.shape(state_n)[0])
