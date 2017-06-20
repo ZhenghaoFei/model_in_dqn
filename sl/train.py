@@ -3,22 +3,22 @@ import numpy as np
 import tensorflow as tf
 from data  import process_gridworld_data
 from model import *
-from utils import fmt_row
+from utils import *
 
 # Data
-imsize = 28
+imsize = 8
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 
 # Parameters
-tf.app.flags.DEFINE_boolean('skip_connection',False,                  'skip connection in dual model')
+tf.app.flags.DEFINE_boolean('skip_connection',True,                  'skip connection in dual model')
 tf.app.flags.DEFINE_boolean('baseline',       False,                  'use baseline cnn model')
 
 tf.app.flags.DEFINE_boolean('weight_decay',   True ,                  'weight_decay')
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
-tf.app.flags.DEFINE_integer('k',              5,                     'Number of value iterations')
+tf.app.flags.DEFINE_integer('k',              1,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
 tf.app.flags.DEFINE_integer('ch_h',           150,                    'Channels in initial hidden layer')
 tf.app.flags.DEFINE_integer('ch_q',           10,                     'Channels in q layer (~actions)')
@@ -99,6 +99,8 @@ with tf.Session(config=config_T) as sess:
     print "imsize = ", imsize
     print "k = ", config.k
     print(fmt_row(10, ["Epoch", "Train Cost", "Train Err", "Epoch Time"]))
+    print2save(fmt_row(10, ["Epoch", "Train Cost", "Train Err", "Epoch Time"]))
+
     learning_rate = config.lr
     for epoch in range(int(config.epochs)):
         if config.weight_decay:
@@ -121,6 +123,8 @@ with tf.Session(config=config_T) as sess:
         if epoch % config.display_step == 0:
             elapsed = time.time() - tstart
             print(fmt_row(10, [epoch, avg_cost/num_batches, avg_err/num_batches, elapsed]))
+            print2save(fmt_row(10, [epoch, avg_cost/num_batches, avg_err/num_batches, elapsed]))
+
         if config.log:
             summary = tf.Summary()
             summary.ParseFromString(sess.run(summary_op))
@@ -142,8 +146,10 @@ with tf.Session(config=config_T) as sess:
                 avg_acc += acc
         avg_acc/=num_eval_batches
         print("Accuracy: {}%".format(100 * (1 - avg_acc)))
+        print2save("Accuracy: {}%".format(100 * (1 - avg_acc)))
 
     print("Finished training!")
+    print2save("Finished training!")
 
     # Test model
     #correct_prediction = tf.cast(tf.argmax(nn, 1), tf.int32)
