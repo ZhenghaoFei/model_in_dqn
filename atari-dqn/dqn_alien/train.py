@@ -46,7 +46,7 @@ def dual_model(img_in, a_dim, scope, k=5, skip=False, reuse=False):
         state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
         state_m1_n = layers.batch_norm(state_m1_n)
 
-        reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
+        reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=tf.nn.relu)
         reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=None)
 
         q_a += reward_m1_n
@@ -94,8 +94,9 @@ def dual_model(img_in, a_dim, scope, k=5, skip=False, reuse=False):
         lambda_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions) * 0.01 , dtype=tf.float32)
         lambda_b1 = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="lamda_b")
 
-        # from (batch_size, dim1, dim2, a_dim) to (a_dim * dim1 * dim2 * 1)
-        state_n = tf.reshape(state_m1_n, shape=[-1, int(state_m1_n.shape[1]), int(state_m1_n.shape[2]) , 1])
+        # from (batch_size, dim1, dim2, a_dim) to (a_dim * batch_size,  dim1 , dim2 , 1)
+        state_n = tf.transpose(state_m1_n, [0,3,1,2])
+        state_n = tf.reshape(state_n, shape=[-1, int(state_n.shape[2]), int(state_n.shape[3]) , 1])
         # print state_n
 
         # gamma, rewards, value
