@@ -20,3 +20,13 @@ def flipkernel(kern):
 def conv2d_flipkernel(x, k, name=None):
     return tf.nn.conv2d(x, flipkernel(k), name=name,
                         strides=(1, 1, 1, 1), padding='SAME')
+
+def print2save(content, filename='./print.txt'):
+    file = open(filename, "a")
+    file.write(content+'\n')
+    file.close()
+
+def print_reset(filename='./print.txt'):
+    file = open(filename, "w")
+    file.write('')
+    file.close()
