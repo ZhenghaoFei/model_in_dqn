@@ -509,15 +509,19 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     state_n = tf.transpose(state_n, [0,2,3,1])
     # fully connected part
     ch_h_fc1 = 64
-    # ch_h_fc2 = 
+    ch_h_fc2 = 64
     # state_fc = layers.flatten(state_n) # initial input
     # shared weights
-    dim_fci = state_n.shape[1]* state_n.shape[2]*ch_state
-    dim_fco =  state_n.shape[1]* state_n.shape[2]*ch_latent_actions*ch_state
+    dim_fci = state_n.shape[1]* state_n.shape[2]*ch_state # input dimension
+    dim_fco =  state_n.shape[1]* state_n.shape[2]*ch_latent_actions*ch_state # output dimension
+
     fc1_w = tf.Variable(np.random.randn(dim_fci, ch_h_fc1)*0.01 , dtype=tf.float32)
-    fc1_b = tf.Variable(tf.zeros([ch_h_fc1]), dtype=tf.float32, name="reward_b")
-    fc2_w = tf.Variable(np.random.randn(ch_h_fc1, dim_fco)*0.01 , dtype=tf.float32)
-    fc2_b = tf.Variable(tf.zeros([dim_fco]), dtype=tf.float32, name="reward_b")
+    fc1_b = tf.Variable(tf.zeros([ch_h_fc1]), dtype=tf.float32)
+    fc2_w = tf.Variable(np.random.randn(ch_h_fc1, ch_h_fc2)*0.01, dtype=tf.float32)
+    fc2_b = tf.Variable(tf.zeros([ch_h_fc2]),dtype=tf.float32)
+    
+    fco_w = tf.Variable(np.random.randn(ch_h_fc2, dim_fco)*0.01 , dtype=tf.float32)
+    fco_b = tf.Variable(tf.zeros([dim_fco]), dtype=tf.float32)
     # gamma, rewards, value
     zeros = 0 * tf.range(0, tf.shape(state_n)[0])
     zeros = tf.expand_dims(zeros, 1)
@@ -535,7 +539,8 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
         # flatten state
         state_fc = layers.flatten(state_n) # initial input
         state_fc1 = tf.nn.relu(tf.matmul(state_fc, fc1_w) + fc1_b)
-        state_fco = tf.nn.relu(tf.matmul(state_fc1, fc2_w) + fc2_b) 
+        state_fc2 = tf.nn.relu(tf.matmul(state_fc1,fc2_w) + fc2_b)
+        state_fco = tf.nn.relu(tf.matmul(state_fc2, fco_w) + fco_b) 
         # cnn state
         state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
         state_m2_h1 = layers.batch_norm(state_m2_h1, decay=0.9)
