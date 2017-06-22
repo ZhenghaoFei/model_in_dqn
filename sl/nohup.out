@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "train.py", line 50, in <module>
+    logits, nn = dual_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+  File "/Users/holly/Documents/model_in_dqn/sl/model.py", line 74, in dual_model
+    state = tf.concat([X, S], axis=3)
+TypeError: concat() got an unexpected keyword argument 'axis'

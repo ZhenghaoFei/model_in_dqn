@@ -14,14 +14,14 @@ tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.ma
 tf.app.flags.DEFINE_boolean('skip_connection',True,                  'skip connection in dual model')
 tf.app.flags.DEFINE_boolean('baseline',       False,                  'use baseline cnn model')
 
-tf.app.flags.DEFINE_boolean('lr_decay',       True ,                  'lr_decay')
+tf.app.flags.DEFINE_boolean('lr_decay',       False ,                  'lr_decay')
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
 tf.app.flags.DEFINE_integer('k',              1,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
-# tf.app.flags.DEFINE_integer('ch_h',           150,                    'Channels in initial hidden layer')
-# tf.app.flags.DEFINE_integer('ch_q',           10,                     'Channels in q layer (~actions)')
+tf.app.flags.DEFINE_integer('ch_h',           150,                    'Channels in initial hidden layer')
+tf.app.flags.DEFINE_integer('ch_q',           10,                     'Channels in q layer (~actions)')
 tf.app.flags.DEFINE_integer('batchsize',      12,                     'Batch size')
 tf.app.flags.DEFINE_integer('statebatchsize', 10,                     'Number of state inputs for each sample (real number, technically is k+1)')
 tf.app.flags.DEFINE_boolean('untied_weights', False,                  'Untie weights of VI network')
@@ -60,7 +60,8 @@ tf.add_to_collection('losses', cross_entropy_mean)
 
 cost = tf.add_n(tf.get_collection('losses'), name='total_loss')
 lr = tf.placeholder(dtype=tf.float32)
-optimizer = tf.train.RMSPropOptimizer(learning_rate=lr, epsilon=1e-6, centered=True).minimize(cost)
+# optimizer = tf.train.RMSPropOptimizer(learning_rate=lr, epsilon=1e-6, centered=True).minimize(cost)
+optimizer = tf.train.AdadeltaOptimizer().minimize(cost)
 
 # Test model & calculate accuracy
 cp = tf.cast(tf.argmax(nn, 1), tf.int32)
