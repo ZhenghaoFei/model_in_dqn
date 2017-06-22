@@ -5,5 +5,5 @@ Find the explicit model in deep q network
 
 Current Results:
 * 8x8:   99.02% (k=1,SAME/VALID,Batch_decay)
-* 16x16: 96.14% (k=2,SAME/VALID,Batch_decay)
-* 28x28: 87.27% (devChen/commit: 50687ad2)
+* 16x16: 97.18% (k=1,mpl_iter)
+* 28x28: 95.07% (k=1,mpl_iter)
