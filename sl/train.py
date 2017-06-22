@@ -6,7 +6,7 @@ from model import *
 from utils import *
 
 # Data
-imsize = 8
+imsize = 16
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 

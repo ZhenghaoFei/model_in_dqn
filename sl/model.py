@@ -235,7 +235,7 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     return pi_logits, pi_action
 
 def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
-
+    print "dual_model_mlayers"
     S = tf.cast(S, dtype=tf.float32)
     state = tf.concat([X, S], axis=3)
     ch_h = 16
@@ -397,11 +397,6 @@ def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
         rewards += mask * tf.expand_dims(tf.gather_nd(reward_n, idx),axis=1)
         values += mask * tf.expand_dims(tf.gather_nd(value_n, idx),axis=1)
         lambdas += mask * tf.expand_dims(tf.gather_nd(lambda_n, idx),axis=1)
-
-    print gammas
-    print rewards
-    print values
-    print lambdas
 
     # g lambda
     g_lambda = zeros
