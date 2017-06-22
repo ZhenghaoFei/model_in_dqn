@@ -47,8 +47,8 @@ a_dim = 8
 if config.baseline:
     logits, nn = baseline_model(X, S, s_dim, a_dim)
 else:
-    logits, nn = dual_model_mlayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
-
+    #logits, nn = dual_model_mlayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+    logits, nn = dual_model_FClayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
 count_parameters()
 
 # Define loss and optimizer
