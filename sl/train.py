@@ -6,7 +6,7 @@ from model import *
 from utils import *
 
 # Data
-imsize = 16
+imsize = 8
 tf.app.flags.DEFINE_integer('imsize',         imsize,                      'Size of input image')
 tf.app.flags.DEFINE_string('input',           'data/gridworld_'+str(imsize)+'.mat', 'Path to data')
 
@@ -47,7 +47,7 @@ a_dim = 8
 if config.baseline:
     logits, nn = baseline_model(X, S, s_dim, a_dim)
 else:
-    logits, nn = dual_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+    logits, nn = dual_model_mlayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
 
 count_parameters()
 

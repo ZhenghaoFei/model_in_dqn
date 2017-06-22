@@ -4,3 +4,7 @@
      Epoch | Train Cost |  Train Err | Epoch Time
      Epoch | Train Cost |  Train Err | Epoch Time
      Epoch | Train Cost |  Train Err | Epoch Time
+     Epoch | Train Cost |  Train Err | Epoch Time
+     Epoch | Train Cost |  Train Err | Epoch Time
+     Epoch | Train Cost |  Train Err | Epoch Time
+     Epoch | Train Cost |  Train Err | Epoch Time

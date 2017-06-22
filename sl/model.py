@@ -78,23 +78,23 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     # state feature extraction
     state_f = layers.convolution2d(state, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_f = layers.batch_norm(state_f,decay=0.9)
+    state_f = layers.batch_norm(state_f, decay=0.9)
 
     state_f = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
-    state_f = layers.batch_norm(state_f,decay=0.9)
+    state_f = layers.batch_norm(state_f, decay=0.9)
 
     # print state_f
 
     # model 1 from state feature to action number of next state
     state_m1_h1 = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_h1 = layers.batch_norm(state_m1_h1,decay=0.9)
+    state_m1_h1 = layers.batch_norm(state_m1_h1, decay=0.9)
 
     state_m1_h2 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_h2 = layers.batch_norm(state_m1_h2,decay=0.9)
 
     state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n,decay=0.9)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
     reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=None)
@@ -102,10 +102,10 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     q_a += reward_m1_n
 
     # State from statespace m1 to state space m2 through cnn
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n,decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
     state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n,decay=0.9)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     # model 2 latent model
     ch_latent_actions = 8
@@ -164,10 +164,10 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
     for j in range(k):
         # state
         state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
-        state_m2_h1 = layers.batch_norm(state_m2_h1,decay=0.9)
+        state_m2_h1 = layers.batch_norm(state_m2_h1, decay=0.9)
 
         state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
-        state_m2_ns = layers.batch_norm(state_m2_ns,decay=0.9)
+        state_m2_ns = layers.batch_norm(state_m2_ns, decay=0.9)
 
         flat_state_m2_h1 = layers.flatten(state_m2_h1)
         flat_state_m2_ns = layers.flatten(state_m2_ns)
@@ -234,33 +234,36 @@ def dual_model(X, S, s_dim, a_dim, k, skip=False):
 
     return pi_logits, pi_action
 
-def dual_model_old(X, S, s_dim, a_dim, k, skip=False):
+def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
 
     S = tf.cast(S, dtype=tf.float32)
     state = tf.concat([X, S], axis=3)
     ch_h = 16
-    print state
+    ch_state_1 = 8
+    ch_state_2 = 8
 
     # store Q(s,a) value
     q_a = tf.Variable(0, dtype=tf.float32, name="q_a", trainable=False)
 
     # state feature extraction
     state_f = layers.convolution2d(state, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_f = layers.batch_norm(state_f,decay=0.9)
+    state_f = layers.batch_norm(state_f, decay=0.9)
 
     state_f = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1,padding='SAME', activation_fn=tf.nn.relu)
-    state_f = layers.batch_norm(state_f,decay=0.9)
+    state_f = layers.batch_norm(state_f, decay=0.9)
+
+    # print state_f
 
     # model 1 from state feature to action number of next state
     state_m1_h1 = layers.convolution2d(state_f, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_h1 = layers.batch_norm(state_m1_h1,decay=0.9)
+    state_m1_h1 = layers.batch_norm(state_m1_h1, decay=0.9)
 
     state_m1_h2 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_h2 = layers.batch_norm(state_m1_h2,decay=0.9)
 
     state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n,decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_1*a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
     reward_m1_n = layers.fully_connected(reward_m1_n, num_outputs=a_dim, activation_fn=None)
@@ -268,25 +271,25 @@ def dual_model_old(X, S, s_dim, a_dim, k, skip=False):
     q_a += reward_m1_n
 
     # State from statespace m1 to state space m2 through cnn
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_2*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     # model 2 latent model
     ch_latent_actions = 8
     # with tf.variable_scope("model2", reuse=reuse):
     # state transition functuon
-    m2_w0 = tf.Variable(np.random.randn(3, 3, 1, ch_h) * 0.01, dtype=tf.float32)
+    m2_w0 = tf.Variable(np.random.randn(3, 3, ch_state_2, ch_h) * 0.01, dtype=tf.float32)
     m2_b0  = tf.Variable(np.random.randn(1, 1, 1, ch_h)    * 0.01, dtype=tf.float32)
 
-    m2_w1 = tf.Variable(np.random.randn(3, 3, ch_h, ch_latent_actions) * 0.01, dtype=tf.float32)
-    m2_b1  = tf.Variable(np.random.randn(1, 1, 1, ch_latent_actions)    * 0.01, dtype=tf.float32)
+    m2_w1 = tf.Variable(np.random.randn(3, 3, ch_h, ch_latent_actions*ch_state_2) * 0.01, dtype=tf.float32)
+    m2_b1  = tf.Variable(np.random.randn(1, 1, 1, ch_latent_actions*ch_state_2)    * 0.01, dtype=tf.float32)
     
     # reward function
     # dim = s_dim[0]*s_dim[1]*ch_h
     dim = state_m1_n.shape[1]* state_m1_n.shape[2]*ch_h
-    dim2 =  state_m1_n.shape[1]* state_m1_n.shape[2]*ch_latent_actions
+    dim2 =  state_m1_n.shape[1]* state_m1_n.shape[2]*ch_latent_actions*ch_state_2
     reward_w0 = tf.Variable(np.random.randn(dim, ch_h)*0.01 , dtype=tf.float32)
     reward_b0 = tf.Variable(tf.zeros([ch_h]), dtype=tf.float32, name="reward_b")
     reward_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions)*0.01, dtype=tf.float32)
@@ -310,89 +313,106 @@ def dual_model_old(X, S, s_dim, a_dim, k, skip=False):
     lambda_w1 = tf.Variable(np.random.randn(ch_h, ch_latent_actions) * 0.01 , dtype=tf.float32)
     lambda_b1 = tf.Variable(tf.zeros([ch_latent_actions]), dtype=tf.float32, name="lamda_b")
 
+    # from (batch_size, dim1, dim2, a_dim * ch_state_1) to (a_dim * batch_size,  dim1 , dim2 , ch_state_1)
+    # (batch_size, a_dim* ch_state_1, dim1 , dim2)
+    state_n = tf.transpose(state_m1_n, [0,3,1,2])
+    # (a_dim * batch_size, ch_state_1, dim1 , dim2 )
+    state_n = tf.reshape(state_n, shape=[-1, ch_state_1, int(state_n.shape[2]), int(state_n.shape[3])])
+    # (a_dim * batch_size, dim1 , dim2, ch_state_1 )
+    state_n = tf.transpose(state_n, [0,2,3,1])
 
-    print state_m1_n
+    # gamma, rewards, value
+    zeros = 0 * tf.range(0, tf.shape(state_n)[0])
+    zeros = tf.expand_dims(zeros, 1)
+    zeros = tf.tile(zeros, [1, k])
 
-    for i in range(a_dim):
-        # state_n = state_m1_n[:,:,:,i]
-        state_n = tf.expand_dims(state_m1_n[:,:,:,i], 3)
-        # state_n = tf.reshape(state_n, shape=[-1, s_dim[0], s_dim[1], 1])
-        # gamma = tf.Variable(1, dtype=tf.float32, name="gamma")
+    zeros = tf.cast(zeros, dtype=tf.float32)
+    gammas = zeros
+    rewards = zeros
+    values = zeros
+    lambdas = zeros
 
-        # gamma, rewards, value
-        zeros = 0 * tf.range(0, tf.shape(state)[0])
-        zeros = tf.expand_dims(zeros, 1)
-        zeros = tf.tile(zeros, [1, k])
-        zeros = tf.cast(zeros, dtype=tf.float32)
-        gammas = zeros
-        rewards = zeros
-        values = zeros
-        lambdas = zeros
+    # print "zeros: ", zeros
 
-        for j in range(k):
-            # state
-            state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
-            state_m2_h1 = layers.batch_norm(state_m2_h1,decay=0.9)
+    for j in range(k):
+        # state
+        state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
+        state_m2_h1 = layers.batch_norm(state_m2_h1, decay=0.9)
 
-            state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
-            state_m2_ns = layers.batch_norm(state_m2_ns,decay=0.9)
+        state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
+        state_m2_ns = layers.batch_norm(state_m2_ns, decay=0.9)
 
-            flat_state_m2_h1 = layers.flatten(state_m2_h1)
-            flat_state_m2_ns = layers.flatten(state_m2_ns)
+        flat_state_m2_h1 = layers.flatten(state_m2_h1)
+        flat_state_m2_ns = layers.flatten(state_m2_ns)
 
-            # reward
-            reward_n = tf.matmul(flat_state_m2_h1, reward_w0) +reward_b0
-            reward_n = tf.matmul(reward_n, reward_w1) +reward_b1
+        # reward
+        reward_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, reward_w0) +reward_b0)
+        reward_n = tf.matmul(reward_n, reward_w1) +reward_b1
 
-            # gamma
-            gamma_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, gamma_w0) +gamma_b0)
-            gamma_n = tf.nn.sigmoid(tf.matmul(gamma_n, gamma_w1) +gamma_b1)
+        # gamma
+        gamma_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, gamma_w0) +gamma_b0)
+        gamma_n = tf.nn.sigmoid(tf.matmul(gamma_n, gamma_w1) +gamma_b1)
 
-            # value
-            value_n = tf.nn.relu(tf.matmul(flat_state_m2_ns, value_w0) + value_b0)
-            value_n = tf.nn.relu(tf.matmul(value_n, value_w1) + value_b1)
+        # value
+        value_n = tf.nn.relu(tf.matmul(flat_state_m2_ns, value_w0) + value_b0)
+        value_n = tf.matmul(value_n, value_w1) + value_b1
 
-            # labmda
-            lambda_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, lambda_w0) +lambda_b0)
-            lambda_n = tf.nn.sigmoid(tf.matmul(lambda_n, lambda_w1) +lambda_b1)
+        # labmda
+        lambda_n = tf.nn.relu(tf.matmul(flat_state_m2_h1, lambda_w0) +lambda_b0)
+        lambda_n = tf.nn.sigmoid(tf.matmul(lambda_n, lambda_w1) +lambda_b1)
 
-            # select action = argmaxQ(s,a)
-            q_n = reward_n + gamma_n*value_n
-            Act = tf.cast(tf.argmax(q_n, axis=1), tf.int32)
-            # print Act
-            idx = tf.stack([tf.range(0, tf.shape(Act)[0]), Act], axis=1)
-            # print idx
-            # select next state
-            state_nt = tf.expand_dims(tf.gather_nd(tf.transpose(state_m2_ns, [0,3,1,2]), idx), 3)
+        # select action = argmaxQ(s,a)
+        q_n = reward_n + gamma_n * value_n
+        # print "q_n: ", q_n
+        Act = tf.cast(tf.argmax(q_n, axis=1), tf.int32)
+        # print Act
+        idx = tf.stack([tf.range(0, tf.shape(Act)[0]), Act], axis=1)
+        # print idx
 
-            if skip:
-                state_n = tf.nn.relu(state_n+state_nt)
-            else:
-                state_n = state_nt
-            # mask next state rewards gammas values
-            # mask = tf.reshape(tf.one_hot(j, depth=k),[1,-1])
-            mask = tf.expand_dims(tf.one_hot(j, depth=k), axis=0)
-            # print "mask: ", mask
-            # print "gather nd: ", tf.gather_nd(gamma_n, idx)
-            gammas += mask * tf.reshape(tf.gather_nd(gamma_n, idx),[-1,1])
-            rewards += mask * tf.reshape(tf.gather_nd(reward_n, idx),[-1,1])
-            values += mask * tf.reshape(tf.gather_nd(value_n, idx),[-1,1])
-            lambdas += mask * tf.reshape(tf.gather_nd(lambda_n, idx),[-1,1])
+        # select next state
+        # print state_m2_nss
+        # state_m2_ns = (?, dim1, dim2, ch_latent_actions * ch_state_2)
+        # state_nt = (?, ch_latent_actions * ch_state_2, dim1, dim2)
+        state_nt = tf.transpose(state_m2_ns, [0,3,1,2])
+        # state_nt = (? , ch_latent_actions, ch_state_2, dim1, dim2)
+        # print "state nt:", state_nt
+        state_nt = tf.reshape(state_nt, shape=[-1, ch_latent_actions, ch_state_2, int(state_nt.shape[2]), int(state_nt.shape[3])])
+        # print "state nt:", state_nt
+        state_nt = tf.gather_nd(state_nt, idx)
+        state_nt = tf.transpose(state_nt, [0,2,3,1])
 
-        # g lambda
-        zeros = 0 * tf.range(0, tf.shape(state)[0])
-        zeros = tf.cast(zeros, dtype=tf.float32)
-        g_lambda = zeros
-        g_lambda = values[:, j]     # t = k
-        for j in reversed(range(k-1)):
-            # a backward pass to calculate return g lambda
-            g_lambda = (1 - lambdas[:, j]) * values[:, j] + lambdas[:, j] * (rewards[:, j] + gammas[:, j]*g_lambda)
 
-        # q_a
-        mask = tf.reshape(tf.one_hot(i, depth=a_dim),[1,-1])
-        g_lambda = tf.expand_dims(g_lambda, 1)
-        g_lambda = tf.tile(g_lambda, [1, a_dim])
-        q_a += mask * g_lambda
+        if skip:
+            state_n = tf.nn.relu(state_n+state_nt)
+        else:
+            state_n = state_nt
+
+        # mask next state rewards gammas values
+        mask = tf.expand_dims(tf.one_hot(j, depth=k), axis=0)
+
+        # print "mask: ", mask
+        # print "gather nd: ",tf.expand_dims(tf.gather_nd(gamma_n, idx),axis=1)
+
+        gammas += mask * tf.expand_dims(tf.gather_nd(gamma_n, idx),axis=1)
+        rewards += mask * tf.expand_dims(tf.gather_nd(reward_n, idx),axis=1)
+        values += mask * tf.expand_dims(tf.gather_nd(value_n, idx),axis=1)
+        lambdas += mask * tf.expand_dims(tf.gather_nd(lambda_n, idx),axis=1)
+
+    print gammas
+    print rewards
+    print values
+    print lambdas
+
+    # g lambda
+    g_lambda = zeros
+    g_lambda = values[:, j]     # t = k
+    for j in reversed(range(k-1)):
+        # a backward pass to calculate return g lambda
+        g_lambda = (1 - lambdas[:, j]) * values[:, j] + lambdas[:, j] * (rewards[:, j] + gammas[:, j] * g_lambda)
+
+
+    g_lambda = tf.reshape(g_lambda, shape=[-1, a_dim])
+    q_a += g_lambda
 
 
     # pi mapping from q to action
@@ -401,7 +421,6 @@ def dual_model_old(X, S, s_dim, a_dim, k, skip=False):
     pi_action = tf.nn.softmax(pi_logits, name="pi_action")
 
     return pi_logits, pi_action
-
 
 # def VI_Block(X, S1, S2, config):
 #     k    = config.k    # Number of value iterations performed

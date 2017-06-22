@@ -14,7 +14,7 @@ from atari_wrappers import *
 SUMMARY_DIR = "./summary"
 
 
-def dual_model(img_in, a_dim, scope, k=5, skip=False, reuse=False):
+def dual_model(img_in, a_dim, scope, k=5, skip=True, reuse=False):
     
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
