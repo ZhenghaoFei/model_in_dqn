@@ -261,8 +261,8 @@ def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
     state_m1_h2 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_h2 = layers.batch_norm(state_m1_h2,decay=0.9)
 
-    state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_1*a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_1*a_dim, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
@@ -270,11 +270,11 @@ def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
 
     q_a += reward_m1_n
 
-    # State from statespace m1 to state space m2 through cnn
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_2*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    # # State from statespace m1 to state space m2 through cnn
+    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_2*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     # model 2 latent model
     ch_latent_actions = 8
@@ -443,8 +443,8 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     state_m1_h2 = layers.convolution2d(state_m1_h1, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_h2 = layers.batch_norm(state_m1_h2,decay=0.9)
 
-    state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
-    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state*a_dim, kernel_size=3, stride=1, padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_h2, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state*a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
     state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     reward_m1_n = layers.fully_connected(layers.flatten(state_m1_h1), num_outputs=ch_h, activation_fn=None)
@@ -453,10 +453,10 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     q_a += reward_m1_n
 
     # State from statespace m1 to state space m2 through cnn
-    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
-    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     # model 2 latent model
     ch_latent_actions = 8
@@ -531,20 +531,28 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     # print "zeros: ", zeros
 
     for j in range(k):
-        # flatten state
+
+        # fc state transition
         state_fc = layers.flatten(state_n) # initial input
         state_fc1 = tf.nn.relu(tf.matmul(state_fc, fc1_w) + fc1_b)
+        state_fc1 = layers.batch_norm(state_fc1, decay=0.9)
+
         state_fc2 = tf.nn.relu(tf.matmul(state_fc1,fc2_w) + fc2_b)
+        state_fc2 = layers.batch_norm(state_fc2, decay=0.9)
+
         state_fco = tf.nn.relu(tf.matmul(state_fc2, fco_w) + fco_b) 
-        # cnn state
+        state_fco = layers.batch_norm(state_fco, decay=0.9)
+
+        # cnn state transition
         state_m2_h1 = tf.nn.relu(tf.nn.conv2d(state_n, m2_w0, strides=(1, 1, 1, 1), padding='SAME') + m2_b0)
         state_m2_h1 = layers.batch_norm(state_m2_h1, decay=0.9)
 
         state_m2_ns = tf.nn.relu(tf.nn.conv2d(state_m2_h1, m2_w1, strides=(1, 1, 1, 1), padding='SAME') + m2_b1)
         state_m2_ns = layers.batch_norm(state_m2_ns, decay=0.9)
 
-        state_fc_ns = tf.reshape(state_fco, shape=[-1, int(state_n.shape[1]), int(state_n.shape[2]),ch_latent_actions*ch_state]) # change fc layer back to a map
-        state_m2_ns = tf.nn.relu(state_m2_ns + state_fc_ns)
+        # combine fc and cnn state transition
+        state_fc_ns = tf.reshape(state_fco, shape=[-1, int(state_m2_ns.shape[1]), int(state_m2_ns.shape[2]), int(state_m2_ns.shape[3])]) # change fc layer back to a map
+        state_m2_ns = state_m2_ns + state_fc_ns
 
         flat_state_m2_h1 = layers.flatten(state_m2_h1)
         flat_state_m2_ns = layers.flatten(state_m2_ns)
@@ -602,11 +610,6 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
         values += mask * tf.expand_dims(tf.gather_nd(value_n, idx),axis=1)
         lambdas += mask * tf.expand_dims(tf.gather_nd(lambda_n, idx),axis=1)
 
-    print gammas
-    print rewards
-    print values
-    print lambdas
-
     # g lambda
     g_lambda = zeros
     g_lambda = values[:, j]     # t = k
@@ -625,6 +628,8 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     pi_action = tf.nn.softmax(pi_logits, name="pi_action")
 
     return pi_logits, pi_action
+
+
 # def VI_Block(X, S1, S2, config):
 #     k    = config.k    # Number of value iterations performed
 #     ch_i = config.ch_i # Channels in input layer
