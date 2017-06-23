@@ -270,11 +270,11 @@ def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
 
     q_a += reward_m1_n
 
-    # # State from statespace m1 to state space m2 through cnn
-    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
-    # state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_2*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
-    # state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    # State from statespace m1 to state space m2 through cnn
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_h, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
+    state_m1_n = layers.convolution2d(state_m1_n, num_outputs=ch_state_2*a_dim, kernel_size=3, stride=1,padding='VALID', activation_fn=tf.nn.relu)
+    state_m1_n = layers.batch_norm(state_m1_n, decay=0.9)
 
     # model 2 latent model
     ch_latent_actions = 8
@@ -418,7 +418,7 @@ def dual_model_mlayers(X, S, s_dim, a_dim, k, skip=False):
     return pi_logits, pi_action
 
 def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
-
+    print "dual_model_FClayers"
     S = tf.cast(S, dtype=tf.float32)
     state = tf.concat([X, S], axis=3)
     ch_h = 16
@@ -460,6 +460,7 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
 
     # model 2 latent model
     ch_latent_actions = 8
+
     # with tf.variable_scope("model2", reuse=reuse):
     # state transition functuon
     m2_w0 = tf.Variable(np.random.randn(3, 3, ch_state, ch_h) * 0.01, dtype=tf.float32)
@@ -502,9 +503,10 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     state_n = tf.reshape(state_n, shape=[-1, ch_state, int(state_n.shape[2]), int(state_n.shape[3])])
     # (a_dim * batch_size, dim1 , dim2, ch_state )
     state_n = tf.transpose(state_n, [0,2,3,1])
+
     # fully connected part
-    ch_h_fc1 = 64
-    ch_h_fc2 = 64
+    ch_h_fc1 = 32
+    ch_h_fc2 = 32
     # state_fc = layers.flatten(state_n) # initial input
     # shared weights
     dim_fci = state_n.shape[1]* state_n.shape[2]*ch_state # input dimension
@@ -534,6 +536,8 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
 
         # fc state transition
         state_fc = layers.flatten(state_n) # initial input
+        state_fc = layers.batch_norm(state_fc, decay=0.9)
+
         state_fc1 = tf.nn.relu(tf.matmul(state_fc, fc1_w) + fc1_b)
         state_fc1 = layers.batch_norm(state_fc1, decay=0.9)
 
