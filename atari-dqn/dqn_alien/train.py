@@ -368,7 +368,7 @@ def dual_model_mlayer(img_in, a_dim, scope, k=5, skip=True, reuse=False):
 
         return q_a
 
-def dual_model_mlayer(img_in, a_dim, scope, k=5, skip=True, reuse=False):
+def dual_model_FClayers(img_in, a_dim, scope, k=5, skip=True, reuse=False):
     
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
@@ -634,7 +634,7 @@ def atari_learn(env,
 
     dqn.learn(
         env,
-        q_func=dual_model_mlayer,
+        q_func=dual_model_FClayers,
         optimizer_spec=optimizer,
         session=session,
         summary_dir=SUMMARY_DIR,
