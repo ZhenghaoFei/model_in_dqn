@@ -11,7 +11,7 @@ import dqn
 from dqn_utils import *
 from atari_wrappers import *
 
-SUMMARY_DIR = "./summary"
+SUMMARY_DIR = "./summary_spaceinvader"
 
 
 def dual_model(img_in, a_dim, scope, k=5, skip=True, reuse=False):
@@ -369,7 +369,7 @@ def dual_model_mlayer(img_in, a_dim, scope, k=5, skip=True, reuse=False):
         return q_a
 
 def dual_model_FClayers(img_in, a_dim, scope, k=5, skip=True, reuse=False):
-    print "dual_model_mlayer"
+    print "dual_model_FClayers    "
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
         # print state.shape[1]
@@ -634,7 +634,7 @@ def atari_learn(env,
 
     dqn.learn(
         env,
-        q_func=dual_model_FClayers,
+        q_func=atari_model,
         optimizer_spec=optimizer,
         session=session,
         summary_dir=SUMMARY_DIR,
@@ -694,7 +694,7 @@ def main():
     # Get Atari games.
     benchmark = gym.benchmark_spec('Atari40M')
     # Change the index to select a different game.
-    task = benchmark.tasks[5]
+    task = benchmark.tasks[6]
     # Run training
     seed = 0 # Use a seed of zero (you may want to randomize the seed!)
     env = get_env(task, seed)
