@@ -505,8 +505,8 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     state_n = tf.transpose(state_n, [0,2,3,1])
 
     # fully connected part
-    ch_h_fc1 = 32
-    ch_h_fc2 = 32
+    ch_h_fc1 = 8
+    ch_h_fc2 = 8
     # state_fc = layers.flatten(state_n) # initial input
     # shared weights
     dim_fci = state_n.shape[1]* state_n.shape[2]*ch_state # input dimension
@@ -519,6 +519,7 @@ def dual_model_FClayers(X, S, s_dim, a_dim, k, skip=False):
     
     fco_w = tf.Variable(np.random.randn(ch_h_fc2, dim_fco)*0.01 , dtype=tf.float32)
     fco_b = tf.Variable(tf.zeros([dim_fco]), dtype=tf.float32)
+    
     # gamma, rewards, value
     zeros = 0 * tf.range(0, tf.shape(state_n)[0])
     zeros = tf.expand_dims(zeros, 1)
