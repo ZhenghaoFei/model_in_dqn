@@ -189,7 +189,7 @@ def dual_model(img_in, a_dim, scope, k=5, skip=True, reuse=False):
         return q_a
 
 def dual_model_mlayer(img_in, a_dim, scope, k=5, skip=True, reuse=False):
-    
+    print "dual_model_mlayer"
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
         # print state.shape[1]
@@ -369,7 +369,7 @@ def dual_model_mlayer(img_in, a_dim, scope, k=5, skip=True, reuse=False):
         return q_a
 
 def dual_model_FClayers(img_in, a_dim, scope, k=5, skip=True, reuse=False):
-    
+    print "dual_model_mlayer"
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
         # print state.shape[1]
