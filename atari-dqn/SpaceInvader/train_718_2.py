@@ -1,3 +1,4 @@
+# This model test using batch transform to realize DQN and it's performance 
 import argparse
 import gym
 from gym import wrappers
@@ -11,11 +12,11 @@ import dqn
 from dqn_utils import *
 from atari_wrappers import *
 
-SUMMARY_DIR = "./summary_spaceinvader_plan_718"
+SUMMARY_DIR = "./summary_spaceinvader_batch_sim_dqn_718_2"
 
-def dual_model_noargmax(img_in, a_dim, scope, k=3, skip=True, reuse=False):
+def dual_model(img_in, a_dim, scope, k=3, skip=True, reuse=False):
     print
-    print "Dual_model_noargmax "
+    print "Dual_model "
     print 
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
@@ -24,15 +25,11 @@ def dual_model_noargmax(img_in, a_dim, scope, k=3, skip=True, reuse=False):
         ch_state_2 = 64
 
          # store Q(s,a) value
-        q_a = tf.Variable(0, dtype=tf.float32, name="q_a", trainable=False)
 
         # state feature extraction (Same to normal DQN)
         state_f = layers.convolution2d(state, num_outputs=32, kernel_size=8, stride=4, padding='SAME', activation_fn=tf.nn.relu)
-        state_f = layers.batch_norm(state_f)
         state_f = layers.convolution2d(state_f, num_outputs=64, kernel_size=4, stride=2, padding='SAME', activation_fn=tf.nn.relu)
-        state_f = layers.batch_norm(state_f) 
         state_f = layers.convolution2d(state_f, num_outputs=64, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
-        state_f = layers.batch_norm(state_f)
         # print state_f
 
         # model 1 from state feature to action number of next state
@@ -196,7 +193,7 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
     print "plan_model "
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
-
+        print "a_dim: ", a_dim
          # store Q(s,a) value
         # q_a = tf.Variable(0, dtype=tf.float32, name="q_a", trainable=False)
 
@@ -205,32 +202,48 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
         state_f = layers.convolution2d(state_f, num_outputs=64, kernel_size=4, stride=2, padding='SAME', activation_fn=tf.nn.relu)
         state_f = layers.convolution2d(state_f, num_outputs=64, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
 
-        flat_state_f = layers.flatten(state_f)
+        # model 1
+        state_n = layers.convolution2d(state_f, num_outputs=64*a_dim, kernel_size=3, stride=1, padding='SAME', activation_fn=tf.nn.relu)
+
+        # batch trick
+        # from (batch_size, dim1, dim2, a_dim * ch_state_1) to (a_dim * batch_size,  dim1 , dim2 , ch_state_1)
+        # (batch_size, a_dim* ch_state_1, dim1 , dim2)
+        state_n = tf.transpose(state_n, [0,3,1,2])
+        # (a_dim * batch_size, ch_state_1, dim1 , dim2 )
+        state_n = tf.reshape(state_n, shape=[-1, 64, int(state_n.shape[2]), int(state_n.shape[3])])
+        # (a_dim * batch_size, dim1 , dim2, ch_state_1 )
+        state_n = tf.transpose(state_n, [0,2,3,1])
+
+        flat_state_n = layers.flatten(state_n)
+        dim_flat_state_f = int(flat_state_n.shape[1])
 
         # define func weights
-        dim_flat_state_f = int(flat_state_f.shape[1])
-
-        # reward function 
         reward_h = 256
         reward_w0 = tf.Variable(np.random.randn(dim_flat_state_f, reward_h)*0.01 , dtype=tf.float32)
         reward_b0 = tf.Variable(tf.zeros([reward_h]), dtype=tf.float32)
-        reward_w1 = tf.Variable(np.random.randn(reward_h, a_dim)*0.01, dtype=tf.float32)
-        reward_b1 = tf.Variable(tf.zeros([a_dim]), dtype=tf.float32)
+        reward_w1 = tf.Variable(np.random.randn(reward_h, 1)*0.01, dtype=tf.float32)
+        reward_b1 = tf.Variable(tf.zeros([1]), dtype=tf.float32)
 
         # state value function
         value_h = 256
         value_w0 = tf.Variable(np.random.randn(dim_flat_state_f, value_h) * 0.01 , dtype=tf.float32)
         value_b0 = tf.Variable(tf.zeros([value_h]) , dtype=tf.float32, name="value_b")
-        value_w1 = tf.Variable(np.random.randn(value_h, a_dim) * 0.01 , dtype=tf.float32)
-        value_b1 = tf.Variable(tf.zeros([a_dim]) * 0.01 , dtype=tf.float32, name="value_b")
+        value_w1 = tf.Variable(np.random.randn(value_h, 1) * 0.01 , dtype=tf.float32)
+        value_b1 = tf.Variable(tf.zeros([1]) * 0.01 , dtype=tf.float32, name="value_b")
 
         # gamma(discount rate)  function
         gamma_h = 32
         gamma_w0 = tf.Variable(np.random.randn(dim_flat_state_f, gamma_h) * 0.01 , dtype=tf.float32)
         gamma_b0 = tf.Variable(tf.zeros([gamma_h]), dtype=tf.float32, name="gamma_b")
-        gamma_w1 = tf.Variable(np.random.randn(gamma_h, a_dim) * 0.01 , dtype=tf.float32)
-        gamma_b1 = tf.Variable(tf.zeros([a_dim]) * 0.01 , dtype=tf.float32, name="gamma_b")
+        gamma_w1 = tf.Variable(np.random.randn(gamma_h, 1) * 0.01 , dtype=tf.float32)
+        gamma_b1 = tf.Variable(tf.zeros([1]) * 0.01 , dtype=tf.float32, name="gamma_b")
 
+        # lambda(discount rate)  function
+        lambda_h = 32
+        lambda_w0 = tf.Variable(np.random.randn(dim_flat_state_f, lambda_h) * 0.01 , dtype=tf.float32)
+        lambda_b0 = tf.Variable(tf.zeros([lambda_h]), dtype=tf.float32, name="lambda_b")
+        lambda_w1 = tf.Variable(np.random.randn(lambda_h, 1) * 0.01 , dtype=tf.float32)
+        lambda_b1 = tf.Variable(tf.zeros([1]) * 0.01 , dtype=tf.float32, name="lambda_b")
 
         # # define state transition functuon with internal policy
         state_h = 64 # same to last layer of state_f
@@ -244,12 +257,11 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
         model_w2 = tf.Variable(np.random.randn(3, 3, model_h, state_h) * 0.01, dtype=tf.float32)
         model_b2  = tf.Variable(np.random.randn(1, 1, 1, state_h)    * 0.01, dtype=tf.float32)
 
-
         # layer implementation
-        reward_n = tf.nn.relu(tf.matmul(flat_state_f, reward_w0) + reward_b0)
+        reward_n = tf.nn.relu(tf.matmul(flat_state_n, reward_w0) + reward_b0)
         reward_n = tf.matmul(reward_n, reward_w1) +reward_b1
 
-        gamma_nn = tf.nn.relu(tf.matmul(flat_state_f, gamma_w0) + gamma_b0)
+        gamma_nn = tf.nn.relu(tf.matmul(flat_state_n, gamma_w0) + gamma_b0)
         gamma_nn = tf.nn.sigmoid(tf.matmul(gamma_nn, gamma_w1) + gamma_b1)
 
         gamma_acc = gamma_nn
@@ -258,47 +270,10 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
 
         state_n = state_f
 
+        print "out: ", out
+        out = tf.reshape(out, shape=[-1, a_dim])
 
-        # # print "zeros: ", zeros
-
-        for j in range(k):
-            # state transition
-            state_m_h1 = tf.nn.relu(tf.nn.conv2d(state_n, model_w0, strides=(1, 1, 1, 1), padding='SAME') + model_b0)
-            state_m_h2 = tf.nn.relu(tf.nn.conv2d(state_m_h1, model_w1, strides=(1, 1, 1, 1), padding='SAME') + model_b1)
-            state_m_ns = tf.nn.relu(tf.nn.conv2d(state_m_h2, model_w2, strides=(1, 1, 1, 1), padding='SAME') + model_b2)
-
-            flat_state_m_h1 = layers.flatten(state_m_h1)
-            flat_state_m_h2 = layers.flatten(state_m_h2)
-            flat_state_m_ns = layers.flatten(state_m_ns)
-
-            # reward
-            reward_n = tf.nn.relu(tf.matmul(flat_state_m_h1, reward_w0) + reward_b0)
-            reward_n = tf.matmul(reward_n, reward_w1) + reward_b1
-
-            # gamma
-            gamma_nn = tf.nn.relu(tf.matmul(flat_state_m_h2, gamma_w0) + gamma_b0)
-            gamma_nn = tf.nn.sigmoid(tf.matmul(gamma_nn, gamma_w1) + gamma_b1)
-
-            # select action = argmaxQ(s,a)
-            q_a +=  gamma_acc * reward_n
-            gamma_acc = gamma_nn * gamma_acc
-
-            # select next state
-            state_nt = state_m_ns
-
-            if skip:
-                state_n = tf.nn.relu(state_n + state_nt)
-            else:
-                state_n = state_nt
-
-        # value
-        value_n = tf.nn.relu(tf.matmul(flat_state_m_ns, value_w0) + value_b0)
-        value_n = tf.matmul(value_n, value_w1) + value_b1
-        q_a +=  gamma_acc * value_n
-
-
-
-    return q_a
+    return out
 
 def atari_model(img_in, num_actions, scope, reuse=False):
     # as described in https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf

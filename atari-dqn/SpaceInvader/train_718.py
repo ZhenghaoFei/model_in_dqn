@@ -296,8 +296,6 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
         value_n = tf.matmul(value_n, value_w1) + value_b1
         q_a +=  gamma_acc * value_n
 
-
-
     return q_a
 
 def atari_model(img_in, num_actions, scope, reuse=False):

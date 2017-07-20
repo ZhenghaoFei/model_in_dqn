@@ -11,7 +11,7 @@ import dqn
 from dqn_utils import *
 from atari_wrappers import *
 
-SUMMARY_DIR = "./summary_spaceinvader_plan_718"
+SUMMARY_DIR = "./summary_spaceinvader_jason_717"
 
 def dual_model_noargmax(img_in, a_dim, scope, k=3, skip=True, reuse=False):
     print
@@ -192,8 +192,8 @@ def dual_model_noargmax(img_in, a_dim, scope, k=3, skip=True, reuse=False):
 
     return q_a
 
-def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
-    print "plan_model "
+def Jason_model(img_in, a_dim, scope, k=3, skip=True, reuse=False):
+    print "Jason_model "
     with tf.variable_scope(scope, reuse=reuse):
         state = img_in
 
@@ -211,7 +211,7 @@ def plan_model(img_in, a_dim, scope, k=6, skip=True, reuse=False):
         dim_flat_state_f = int(flat_state_f.shape[1])
 
         # reward function 
-        reward_h = 256
+        reward_h = 512
         reward_w0 = tf.Variable(np.random.randn(dim_flat_state_f, reward_h)*0.01 , dtype=tf.float32)
         reward_b0 = tf.Variable(tf.zeros([reward_h]), dtype=tf.float32)
         reward_w1 = tf.Variable(np.random.randn(reward_h, a_dim)*0.01, dtype=tf.float32)
@@ -352,7 +352,7 @@ def atari_learn(env,
 
     dqn.learn(
         env,
-        q_func=plan_model,
+        q_func=Jason_model,
         optimizer_spec=optimizer,
         session=session,
         summary_dir=SUMMARY_DIR,

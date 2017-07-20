@@ -18,7 +18,7 @@ tf.app.flags.DEFINE_boolean('lr_decay',       True ,                  'lr_decay'
 
 tf.app.flags.DEFINE_float('lr',               0.001,                  'Learning rate for RMSProp')
 tf.app.flags.DEFINE_integer('epochs',         30,                     'Maximum epochs to train for')
-tf.app.flags.DEFINE_integer('k',              3,                     'Number of value iterations')
+tf.app.flags.DEFINE_integer('k',              1,                     'Number of value iterations')
 tf.app.flags.DEFINE_integer('ch_i',           2,                      'Channels in input layer')
 # tf.app.flags.DEFINE_integer('ch_h',           150,                    'Channels in initial hidden layer')
 # tf.app.flags.DEFINE_integer('ch_q',           10,                     'Channels in q layer (~actions)')
@@ -48,7 +48,7 @@ if config.baseline:
     logits, nn = baseline_model(X, S, s_dim, a_dim)
 else:
     #logits, nn = dual_model_mlayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
-    logits, nn = dual_model_FClayers(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
+    logits, nn = dqn_model(X, S, s_dim, a_dim, config.k, skip=config.skip_connection)
 count_parameters()
 
 # Define loss and optimizer
